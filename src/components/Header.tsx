@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Header.css';
-
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 type EthereumRequest = {
   method: string;
   params?: any[];
@@ -27,6 +27,28 @@ export default function Header() {
     }
   };
 
+  // return (
+  //   <header className="header">
+  //     <div className="header-content">
+  //       <Link to="/" className="logo">
+  //         Social Investment
+  //       </Link>
+  //       <div className="header-actions">
+  //         <Link to="/create" className="create-button">
+  //           Create Topic
+  //         </Link>
+  //         <button 
+  //           className="connect-wallet" 
+  //           onClick={connectWallet}
+  //         >
+  //           {isConnected 
+  //             ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` 
+  //             : 'Connect Wallet'}
+  //         </button>
+  //       </div>
+  //     </div>
+  //   </header>
+  // );
   return (
     <header className="header">
       <div className="header-content">
@@ -37,14 +59,7 @@ export default function Header() {
           <Link to="/create" className="create-button">
             Create Topic
           </Link>
-          <button 
-            className="connect-wallet" 
-            onClick={connectWallet}
-          >
-            {isConnected 
-              ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` 
-              : 'Connect Wallet'}
-          </button>
+          <ConnectButton />
         </div>
       </div>
     </header>
