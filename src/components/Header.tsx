@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link } from 'react-router-dom';
 import './Header.css';
 
@@ -37,14 +38,8 @@ export default function Header() {
           <Link to="/create" className="create-button">
             Create Topic
           </Link>
-          <button 
-            className="connect-wallet" 
-            onClick={connectWallet}
-          >
-            {isConnected 
-              ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` 
-              : 'Connect Wallet'}
-          </button>
+          <ConnectButton />
+          
         </div>
       </div>
     </header>
