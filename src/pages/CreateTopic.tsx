@@ -1,19 +1,25 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateTopic.css";
-//import {MyComponent} from '../Contract';
-import { Address, Chain, Client, formatEther, keccak256, parseEther, toBytes, Transport } from "viem";
-import { ChainIdParameter } from "@wagmi/core/internal";
-import { maxUint256 } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_metadata.json";
 import ERC20ABI from "../contracts/TopicERC20_metadata.json";
-import { getTransactionReceipt, readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
-import { config } from "src/wagmi";
+
+
 import { getPublicClient, getWalletClient } from "@wagmi/core";
+import { config } from "src/wagmi";
+import { maxUint256 } from "viem";
+import { ChainIdParameter } from "@wagmi/core/internal";
+import { Address, Chain, Client, formatEther, keccak256, parseEther, toBytes, Transport } from "viem";
 import { BigNumber } from "bignumber.js";
+import { getTransactionReceipt, readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
+import { notification } from 'antd';
+
+type NotificationType = 'success' | 'info' | 'warning' | 'error';
+
 // 合约地址（替换为实际部署的合约地址）
 const pivotTopicContractAddress = "0x9b764159249880e2d6B9a7F86495371c45aB69bC";
+
 
 export default function CreateTopic() {
     const navigate = useNavigate();
@@ -21,7 +27,16 @@ export default function CreateTopic() {
     const { chainId, address } = useAccount();
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
-    // const { data: hash, isPending, writeContract } = useWriteContract();
+    const { data: balance } = useBalance({
+        address
+    });
+    
+    const openNotificationWithIcon=()=>{notification.error({
+        message: 'error',
+        description: 'Insufficient balance',
+        duration:3
+      });
+  };
 
     const [formData, setFormData] = useState({
         title: "",
@@ -31,14 +46,32 @@ export default function CreateTopic() {
         tokenAddress: "",
     });
 
+    const checkBalance = (paymentAmount: string): boolean => {
+    
+        if (balance && BigInt(balance.value) >= parseEther(paymentAmount)) {
+            return true;
+        }
+        console.log(balance);
+        return false;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
-        setIsPending(true);
         e.preventDefault();
-        // Add topic creation logic here
+        setIsPending(true);
+        
         console.log("Form submitted:", formData);
         const { tokenAddress, ...metadata } = formData;
         const message = JSON.stringify(metadata);
         const hashedMessage = keccak256(toBytes(message));
+
+        // 检查余额是否足够
+        if (!checkBalance(formData.investmentAmount)) {
+            console.log("Insufficient balance");
+            openNotificationWithIcon();
+            setIsPending(false);
+            return;
+        }
+
         try {
             const publicClient = getPublicClient(config, { chainId: chainId as ChainIdParameter<typeof config>["chainId"] }) as Client<Transport, Chain>;
             const result = (await readContract(publicClient, {
