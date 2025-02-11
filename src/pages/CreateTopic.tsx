@@ -27,9 +27,7 @@ export default function CreateTopic() {
     const { chainId, address } = useAccount();
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
-    const { data: balance } = useBalance({
-        address
-    });
+    
     
     const openNotificationWithIcon=()=>{notification.error({
         message: 'error',
@@ -37,7 +35,7 @@ export default function CreateTopic() {
         duration:3
       });
   };
-
+  const publicClient = getPublicClient(config, { chainId: chainId as ChainIdParameter<typeof config>["chainId"] }) as Client<Transport, Chain>;
     const [formData, setFormData] = useState({
         title: "",
         content: "",
@@ -46,12 +44,18 @@ export default function CreateTopic() {
         tokenAddress: "",
     });
 
-    const checkBalance = (paymentAmount: string): boolean => {
-    
-        if (balance && BigInt(balance.value) >= parseEther(paymentAmount)) {
+    const checkBalance = async (paymentAmount: string) => {
+
+        const result = (await readContract(publicClient, {
+            abi: ERC20ABI.output.abi,
+            address: formData.tokenAddress as Address,
+            functionName: "allowance",
+            args: [address, pivotTopicContractAddress],
+        })) as bigint;
+        console.log(result);
+        if (result && BigInt(result) >= parseEther(paymentAmount)) {
             return true;
         }
-        console.log(balance);
         return false;
     };
 
@@ -73,7 +77,6 @@ export default function CreateTopic() {
         }
 
         try {
-            const publicClient = getPublicClient(config, { chainId: chainId as ChainIdParameter<typeof config>["chainId"] }) as Client<Transport, Chain>;
             const result = (await readContract(publicClient, {
                 abi: ERC20ABI.output.abi,
                 address: formData.tokenAddress as Address,
