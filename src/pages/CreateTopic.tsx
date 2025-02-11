@@ -1,41 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateTopic.css";
-import { useAccount, useBalance } from "wagmi";
+import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_metadata.json";
 import ERC20ABI from "../contracts/TopicERC20_metadata.json";
 
-
-import { getPublicClient, getWalletClient } from "@wagmi/core";
-import { config } from "src/wagmi";
 import { maxUint256 } from "viem";
-import { ChainIdParameter } from "@wagmi/core/internal";
 import { Address, Chain, Client, formatEther, keccak256, parseEther, toBytes, Transport } from "viem";
 import { BigNumber } from "bignumber.js";
-import { getTransactionReceipt, readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
-import { notification } from 'antd';
-
-type NotificationType = 'success' | 'info' | 'warning' | 'error';
+import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
+import { notification } from "antd";
+import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
+import { usePreProcessing } from "src/hooks/usePreProcessing";
 
 // 合约地址（替换为实际部署的合约地址）
 const pivotTopicContractAddress = "0x9b764159249880e2d6B9a7F86495371c45aB69bC";
-
 
 export default function CreateTopic() {
     const navigate = useNavigate();
 
     const { chainId, address } = useAccount();
+    const preProcessing = usePreProcessing();
+
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
-    
-    
-    const openNotificationWithIcon=()=>{notification.error({
-        message: 'error',
-        description: 'Insufficient balance',
-        duration:3
-      });
-  };
-  const publicClient = getPublicClient(config, { chainId: chainId as ChainIdParameter<typeof config>["chainId"] }) as Client<Transport, Chain>;
+
+    const openNotificationWithIcon = () => {
+        notification.error({
+            message: "error",
+            description: "Insufficient balance",
+            duration: 3,
+        });
+    };
     const [formData, setFormData] = useState({
         title: "",
         content: "",
@@ -44,13 +40,14 @@ export default function CreateTopic() {
         tokenAddress: "",
     });
 
-    const checkBalance = async (paymentAmount: string) => {
+    const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
 
+    const checkBalance = async (paymentAmount: string) => {
         const result = (await readContract(publicClient, {
             abi: ERC20ABI.output.abi,
             address: formData.tokenAddress as Address,
-            functionName: "allowance",
-            args: [address, pivotTopicContractAddress],
+            functionName: "balanceOf",
+            args: [address],
         })) as bigint;
         console.log(result);
         if (result && BigInt(result) >= parseEther(paymentAmount)) {
@@ -62,21 +59,20 @@ export default function CreateTopic() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsPending(true);
-        
-        console.log("Form submitted:", formData);
-        const { tokenAddress, ...metadata } = formData;
-        const message = JSON.stringify(metadata);
-        const hashedMessage = keccak256(toBytes(message));
-
-        // 检查余额是否足够
-        if (!checkBalance(formData.investmentAmount)) {
-            console.log("Insufficient balance");
-            openNotificationWithIcon();
-            setIsPending(false);
-            return;
-        }
 
         try {
+            await preProcessing();
+
+            console.log("Form submitted:", formData);
+
+            // 检查余额是否足够
+            if (!(await checkBalance(formData.investmentAmount))) {
+                console.log("Insufficient balance");
+                openNotificationWithIcon();
+                setIsPending(false);
+                return;
+            }
+
             const result = (await readContract(publicClient, {
                 abi: ERC20ABI.output.abi,
                 address: formData.tokenAddress as Address,
@@ -85,8 +81,10 @@ export default function CreateTopic() {
             })) as bigint;
             console.log({ result });
 
-            const walletClient = await getWalletClient(config);
             console.log(formData.investmentAmount, formatEther(result));
+
+            const walletClient = await getWagmiWalletClient();
+
             if (BigNumber(formData.investmentAmount).gt(formatEther(result))) {
                 const hash = await writeContract(walletClient, {
                     address: formData.tokenAddress as Address,
@@ -98,6 +96,10 @@ export default function CreateTopic() {
                 const res = await waitForTransactionReceipt(publicClient, { hash });
                 console.log({ res });
             }
+
+            const { tokenAddress, ...metadata } = formData;
+            const message = JSON.stringify(metadata);
+            const hashedMessage = keccak256(toBytes(message));
 
             const hash = await writeContract(walletClient, {
                 address: pivotTopicContractAddress,
@@ -112,7 +114,7 @@ export default function CreateTopic() {
             //navigate('/');
             setIsPending(false);
         } catch (error) {
-            console.error("Error calling contract function:", error);
+            console.log(error);
             setIsPending(false);
         }
     };
