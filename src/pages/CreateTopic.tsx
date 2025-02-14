@@ -5,20 +5,16 @@ import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_metadata.json";
 import ERC20ABI from "../contracts/TopicERC20_metadata.json";
 
-import { maxUint256 } from "viem";
-import { Address, Chain, Client, formatEther, keccak256, parseEther, toBytes, Transport } from "viem";
+import { formatUnits, maxUint256, parseUnits } from "viem";
+import { Address, Chain, keccak256, toBytes } from "viem";
 import { BigNumber } from "bignumber.js";
 import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
 import { notification } from "antd";
 import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
-
-// 合约地址（替换为实际部署的合约地址）
-const pivotTopicContractAddress = "0x9b764159249880e2d6B9a7F86495371c45aB69bC";
+import { pivotTopicContractAddress } from "src/contracts/address";
 
 export default function CreateTopic() {
-    const navigate = useNavigate();
-
     const { chainId, address } = useAccount();
     const preProcessing = usePreProcessing();
 
@@ -42,7 +38,16 @@ export default function CreateTopic() {
 
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
 
-    const checkBalance = async (paymentAmount: string) => {
+    const getTokenDecimals = async () => {
+        const tokenDecimals = (await readContract(publicClient, {
+            abi: ERC20ABI.output.abi,
+            address: formData.tokenAddress as Address,
+            functionName: "decimals",
+        })) as number;
+        return tokenDecimals;
+    };
+
+    const checkBalance = async (paymentAmount: string, tokenDecimals: number) => {
         const result = (await readContract(publicClient, {
             abi: ERC20ABI.output.abi,
             address: formData.tokenAddress as Address,
@@ -50,7 +55,7 @@ export default function CreateTopic() {
             args: [address],
         })) as bigint;
         console.log(result);
-        if (result && BigInt(result) >= parseEther(paymentAmount)) {
+        if (result && BigInt(result) >= parseUnits(paymentAmount, tokenDecimals)) {
             return true;
         }
         return false;
@@ -62,35 +67,37 @@ export default function CreateTopic() {
 
         try {
             await preProcessing();
-
+            const tokenDecimals = await getTokenDecimals();
             console.log("Form submitted:", formData);
 
             // 检查余额是否足够
-            if (!(await checkBalance(formData.investmentAmount))) {
+            if (!(await checkBalance(formData.investmentAmount, tokenDecimals))) {
                 console.log("Insufficient balance");
                 openNotificationWithIcon();
                 setIsPending(false);
                 return;
             }
 
+            const contractAddress = pivotTopicContractAddress[chainId!];
+
             const result = (await readContract(publicClient, {
                 abi: ERC20ABI.output.abi,
                 address: formData.tokenAddress as Address,
                 functionName: "allowance",
-                args: [address, pivotTopicContractAddress],
+                args: [address, contractAddress],
             })) as bigint;
             console.log({ result });
 
-            console.log(formData.investmentAmount, formatEther(result));
+            console.log(formData.investmentAmount, formatUnits(result, tokenDecimals));
 
             const walletClient = await getWagmiWalletClient();
 
-            if (BigNumber(formData.investmentAmount).gt(formatEther(result))) {
+            if (BigNumber(formData.investmentAmount).gt(formatUnits(result, tokenDecimals))) {
                 const hash = await writeContract(walletClient, {
                     address: formData.tokenAddress as Address,
                     abi: ERC20ABI.output.abi,
                     functionName: "approve",
-                    args: [pivotTopicContractAddress, maxUint256],
+                    args: [contractAddress, maxUint256],
                 });
                 console.log({ hash });
                 const res = await waitForTransactionReceipt(publicClient, { hash });
@@ -102,10 +109,10 @@ export default function CreateTopic() {
             const hashedMessage = keccak256(toBytes(message));
 
             const hash = await writeContract(walletClient, {
-                address: pivotTopicContractAddress,
+                address: contractAddress,
                 abi: PivotTopicABI.output.abi,
                 functionName: "createTopic",
-                args: [parseEther(formData.investmentAmount), formData.tokenAddress, hashedMessage],
+                args: [parseUnits(formData.investmentAmount, tokenDecimals), formData.tokenAddress, hashedMessage],
             });
             setHash(hash);
             console.log({ hash });
@@ -113,6 +120,11 @@ export default function CreateTopic() {
             console.log({ res });
             //navigate('/');
             setIsPending(false);
+            notification.success({
+                message: "success",
+                description: "Successfully created",
+                duration: 3,
+            });
         } catch (error) {
             console.log(error);
             setIsPending(false);
@@ -161,7 +173,7 @@ export default function CreateTopic() {
                     {isPending ? "Creating Topic..." : "Create Topic"}
                 </button>
 
-                {hash && <div>Transaction Hash: {hash}</div>}
+                {hash && <div>Transaction Hash of Creating a PIVOT Topic: {hash}</div>}
             </form>
         </div>
     );
