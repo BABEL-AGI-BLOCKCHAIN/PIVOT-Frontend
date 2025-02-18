@@ -1,11 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import Header from './components/Header';
 import Home from './pages/Home';
 import CreateTopic from './pages/CreateTopic';
 import TopicDetail1 from './pages/TopicDetail';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-export default function App() {
+const App = () => {
   return (
     <Router>
       <div className="app">
@@ -16,7 +16,18 @@ export default function App() {
           <Route path="/topic/:id" element={<TopicDetail1 />} />
         </Routes>
       </div>
+      <div
+      style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        padding: 12,
+      }}
+    >
+      
+    </div>
     </Router>
+    
   );
-}
+};
 
+export default App;
