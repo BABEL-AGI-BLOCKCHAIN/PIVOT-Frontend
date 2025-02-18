@@ -4,13 +4,13 @@ import "./TopicDetail.css";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
 import { notification } from "antd";
 import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
-import PivotTopicABI from "../contracts/PivotTopic_metadata.json";
+import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import BigNumber from "bignumber.js";
 import { pivotTopicContractAddress } from "src/contracts/address";
 import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { maxUint256, Address, formatUnits, parseUnits } from "viem";
 import { useAccount } from "wagmi";
-import ERC20ABI from "../contracts/TopicERC20_metadata.json";
+import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 
 interface Comment {
     id: string;
@@ -60,7 +60,7 @@ export default function TopicDetail1() {
         }
         const contractAddress = pivotTopicContractAddress[chainId!];
         const myInvestment = (await readContract(publicClient, {
-            abi: PivotTopicABI.output.abi,
+            abi: PivotTopicABI,
             address: contractAddress,
             functionName: "getInvestment",
             args: [address, id],
@@ -73,7 +73,7 @@ export default function TopicDetail1() {
             return;
         }
         const result = (await readContract(publicClient, {
-            abi: ERC20ABI.output.abi,
+            abi: ERC20ABI,
             address: tokenAddress as Address,
             functionName: "balanceOf",
             args: [address],
@@ -84,20 +84,20 @@ export default function TopicDetail1() {
     const getTokenInfo = async () => {
         const contractAddress = pivotTopicContractAddress[chainId!];
         const tokenAddress = (await readContract(publicClient, {
-            abi: PivotTopicABI.output.abi,
+            abi: PivotTopicABI,
             address: contractAddress,
             functionName: "topicCoin",
             args: [id],
         })) as Address;
 
         const tokenSymbol = (await readContract(publicClient, {
-            abi: ERC20ABI.output.abi,
+            abi: ERC20ABI,
             address: tokenAddress,
             functionName: "symbol",
         })) as string;
 
         const tokenDecimals = (await readContract(publicClient, {
-            abi: ERC20ABI.output.abi,
+            abi: ERC20ABI,
             address: tokenAddress,
             functionName: "decimals",
         })) as number;
@@ -107,7 +107,7 @@ export default function TopicDetail1() {
     const getMinimumInvestmentAmount = async () => {
         const contractAddress = pivotTopicContractAddress[chainId!];
         const result = (await readContract(publicClient, {
-            abi: PivotTopicABI.output.abi,
+            abi: PivotTopicABI,
             address: contractAddress,
             functionName: "getFixedInvestment",
             args: [id],
@@ -207,7 +207,7 @@ export default function TopicDetail1() {
             const contractAddress = pivotTopicContractAddress[chainId!];
 
             const result = (await readContract(publicClient, {
-                abi: ERC20ABI.output.abi,
+                abi: ERC20ABI,
                 address: tokenAddress,
                 functionName: "allowance",
                 args: [address, contractAddress],
@@ -220,7 +220,7 @@ export default function TopicDetail1() {
             if (BigNumber(investmentAmount).gt(formatUnits(result, topic.tokenDecimals))) {
                 const hash = await writeContract(walletClient, {
                     address: tokenAddress,
-                    abi: ERC20ABI.output.abi,
+                    abi: ERC20ABI,
                     functionName: "approve",
                     args: [contractAddress, maxUint256],
                 });
@@ -231,7 +231,7 @@ export default function TopicDetail1() {
 
             const hash = await writeContract(walletClient, {
                 address: contractAddress,
-                abi: PivotTopicABI.output.abi,
+                abi: PivotTopicABI,
                 functionName: "invest",
                 args: [id, parseUnits(investmentAmount, topic.tokenDecimals)],
             });

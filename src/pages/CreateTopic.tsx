@@ -2,8 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateTopic.css";
 import { useAccount } from "wagmi";
-import PivotTopicABI from "../contracts/PivotTopic_metadata.json";
-import ERC20ABI from "../contracts/TopicERC20_metadata.json";
+import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
+import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 
 import { formatUnits, maxUint256, parseUnits } from "viem";
 import { Address, Chain, keccak256, toBytes } from "viem";
@@ -40,7 +40,7 @@ export default function CreateTopic() {
 
     const getTokenDecimals = async () => {
         const tokenDecimals = (await readContract(publicClient, {
-            abi: ERC20ABI.output.abi,
+            abi: ERC20ABI,
             address: formData.tokenAddress as Address,
             functionName: "decimals",
         })) as number;
@@ -49,7 +49,7 @@ export default function CreateTopic() {
 
     const checkBalance = async (paymentAmount: string, tokenDecimals: number) => {
         const result = (await readContract(publicClient, {
-            abi: ERC20ABI.output.abi,
+            abi: ERC20ABI,
             address: formData.tokenAddress as Address,
             functionName: "balanceOf",
             args: [address],
@@ -81,7 +81,7 @@ export default function CreateTopic() {
             const contractAddress = pivotTopicContractAddress[chainId!];
 
             const result = (await readContract(publicClient, {
-                abi: ERC20ABI.output.abi,
+                abi: ERC20ABI,
                 address: formData.tokenAddress as Address,
                 functionName: "allowance",
                 args: [address, contractAddress],
@@ -95,7 +95,7 @@ export default function CreateTopic() {
             if (BigNumber(formData.investmentAmount).gt(formatUnits(result, tokenDecimals))) {
                 const hash = await writeContract(walletClient, {
                     address: formData.tokenAddress as Address,
-                    abi: ERC20ABI.output.abi,
+                    abi: ERC20ABI,
                     functionName: "approve",
                     args: [contractAddress, maxUint256],
                 });
@@ -110,7 +110,7 @@ export default function CreateTopic() {
 
             const hash = await writeContract(walletClient, {
                 address: contractAddress,
-                abi: PivotTopicABI.output.abi,
+                abi: PivotTopicABI,
                 functionName: "createTopic",
                 args: [parseUnits(formData.investmentAmount, tokenDecimals), formData.tokenAddress, hashedMessage],
             });
