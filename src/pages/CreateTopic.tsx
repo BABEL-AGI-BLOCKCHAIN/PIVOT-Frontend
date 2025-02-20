@@ -21,10 +21,10 @@ export default function CreateTopic() {
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
 
-    const openNotificationWithIcon = () => {
+    const openNotificationWithIcon = (description: string) => {
         notification.error({
             message: "error",
-            description: "Insufficient balance",
+            description,
             duration: 3,
         });
     };
@@ -66,14 +66,21 @@ export default function CreateTopic() {
         setIsPending(true);
 
         try {
+            const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
             await preProcessing();
             const tokenDecimals = await getTokenDecimals();
             console.log("Form submitted:", formData);
 
-            // 检查余额是否足够
-            if (!(await checkBalance(formData.investmentAmount, tokenDecimals))) {
+            if (!(await checkBalance(investmentAmount, tokenDecimals))) {
                 console.log("Insufficient balance");
-                openNotificationWithIcon();
+                openNotificationWithIcon("Insufficient balance");
+                setIsPending(false);
+                return;
+            }
+
+            if (investmentAmount == "0") {
+                console.log("Insufficient investment amount");
+                openNotificationWithIcon("Insufficient investment amount");
                 setIsPending(false);
                 return;
             }
@@ -88,11 +95,11 @@ export default function CreateTopic() {
             })) as bigint;
             console.log({ result });
 
-            console.log(formData.investmentAmount, formatUnits(result, tokenDecimals));
+            console.log(investmentAmount, formatUnits(result, tokenDecimals));
 
             const walletClient = await getWagmiWalletClient();
 
-            if (BigNumber(formData.investmentAmount).gt(formatUnits(result, tokenDecimals))) {
+            if (BigNumber(investmentAmount).gt(formatUnits(result, tokenDecimals))) {
                 const hash = await writeContract(walletClient, {
                     address: formData.tokenAddress as Address,
                     abi: ERC20ABI,
@@ -112,7 +119,7 @@ export default function CreateTopic() {
                 address: contractAddress,
                 abi: PivotTopicABI,
                 functionName: "createTopic",
-                args: [parseUnits(formData.investmentAmount, tokenDecimals), formData.tokenAddress, hashedMessage],
+                args: [parseUnits(investmentAmount, tokenDecimals), formData.tokenAddress, hashedMessage],
             });
             setHash(hash);
             console.log({ hash });

@@ -167,14 +167,14 @@ export default function TopicDetail1() {
     };
 
     const checkInvestmentAmount = async (investmentAmount: string) => {
-        if (BigInt(investmentAmount) > 0 && BigInt(investmentAmount) % BigInt(topic!.minimumInvestmentAmount) == BigInt(0)) {
+        if (Number(investmentAmount) > 0 && BigNumber(investmentAmount).mod(topic!.minimumInvestmentAmount).toNumber() == 0) {
             return true;
         }
         return false;
     };
 
     const checkBalance = async (paymentAmount: string) => {
-        if (topic?.myTokenBalance && BigInt(topic?.myTokenBalance) >= BigInt(paymentAmount)) {
+        if (topic?.myTokenBalance && BigNumber(topic?.myTokenBalance).gte(paymentAmount)) {
             return true;
         }
         return false;
@@ -188,18 +188,19 @@ export default function TopicDetail1() {
             await preProcessing();
 
             const tokenAddress = topic?.tokenAddress;
+            const investmentAmountLocaleString = Number(investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
 
             if (!tokenAddress) {
                 return;
             }
 
-            if (!(await checkBalance(investmentAmount))) {
+            if (!(await checkBalance(investmentAmountLocaleString))) {
                 openNotificationWithIcon("Insufficient balance");
                 setIsPending(false);
                 return;
             }
 
-            if (!(await checkInvestmentAmount(investmentAmount))) {
+            if (!(await checkInvestmentAmount(investmentAmountLocaleString))) {
                 openNotificationWithIcon("It is not a multiple of the creator's investment amount");
                 setIsPending(false);
                 return;
@@ -213,11 +214,11 @@ export default function TopicDetail1() {
                 args: [address, contractAddress],
             })) as bigint;
 
-            console.log(investmentAmount, formatUnits(result, topic.tokenDecimals));
+            console.log(investmentAmountLocaleString, formatUnits(result, topic.tokenDecimals));
 
             const walletClient = await getWagmiWalletClient();
 
-            if (BigNumber(investmentAmount).gt(formatUnits(result, topic.tokenDecimals))) {
+            if (BigNumber(investmentAmountLocaleString).gt(formatUnits(result, topic.tokenDecimals))) {
                 const hash = await writeContract(walletClient, {
                     address: tokenAddress,
                     abi: ERC20ABI,
@@ -233,7 +234,7 @@ export default function TopicDetail1() {
                 address: contractAddress,
                 abi: PivotTopicABI,
                 functionName: "invest",
-                args: [id, parseUnits(investmentAmount, topic.tokenDecimals)],
+                args: [id, parseUnits(investmentAmountLocaleString, topic.tokenDecimals)],
             });
             setHash(hash);
             console.log({ hash });
