@@ -29,6 +29,7 @@ interface TopicDetail {
     minimumInvestmentAmount: string;
     currentPosition: number;
     myInvestment: string;
+    myIncome: string;
     commentsCount: number;
     publishTime: string;
     tokenName: string;
@@ -44,12 +45,14 @@ export default function TopicDetail1() {
     const { id } = useParams();
     const [topic, setTopic] = useState<TopicDetail>();
     const [newComment, setNewComment] = useState("");
-    const [myInvestment, setMyInvestment] = useState("");
     const [investmentAmount, setInvestmentAmount] = useState("");
 
     const preProcessing = usePreProcessing();
     const [isPending, setIsPending] = useState(false);
+    const [isWithdrawalPending, setIsWithdrawalPending] = useState(false);
+
     const [hash, setHash] = useState("");
+    const [withdrawalHash, setWithdrawalHash] = useState("");
     const { chainId, address } = useAccount();
 
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
@@ -77,6 +80,17 @@ export default function TopicDetail1() {
             address: tokenAddress as Address,
             functionName: "balanceOf",
             args: [address],
+        })) as bigint;
+        return result;
+    };
+
+    const getMyIncome = async (investor: Address, topicId: string) => {
+        const contractAddress = pivotTopicContractAddress[chainId!];
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "getIncome",
+            args: [investor, topicId],
         })) as bigint;
         return result;
     };
@@ -115,17 +129,20 @@ export default function TopicDetail1() {
         return result;
     };
 
-    const getContractData = async (topic: TopicDetail) => {
-        const tokenInfo = await getTokenInfo();
-        const minimumInvestmentAmount = await getMinimumInvestmentAmount();
-        const myTokenBalance = await getMyTokenBalance(tokenInfo.tokenAddress);
+    const getContractData = async (topic: TopicDetail, isInitial?: boolean) => {
+        const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic.tokenAddress, tokenSymbol: topic.tokenSymbol, tokenDecimals: topic.tokenDecimals };
+        const minimumInvestmentAmount = isInitial && (await getMinimumInvestmentAmount());
+        const myTokenBalance = await getMyTokenBalance(topic.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
         const myInvestment = await getMyInvestment();
+        const myIncome = await getMyIncome(address as Address, id!);
+
         setTopic({
             ...topic,
-            ...tokenInfo,
-            minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo.tokenDecimals),
-            myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
+            ...(isInitial && tokenInfo),
+            ...(isInitial && { minimumInvestmentAmount: formatUnits((minimumInvestmentAmount as bigint) ?? BigInt(0), tokenInfo.tokenDecimals) }),
             myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
+            myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
+            myIncome: formatUnits(myIncome ?? BigInt(0), tokenInfo.tokenDecimals),
         });
     };
 
@@ -155,7 +172,7 @@ export default function TopicDetail1() {
         };
         const newTopic = { ...(topic as TopicDetail), ...mockTopic };
         setTopic(newTopic);
-        getContractData(newTopic);
+        getContractData(newTopic, true);
     }, [id]);
 
     const openNotificationWithIcon = (description: string) => {
@@ -179,9 +196,12 @@ export default function TopicDetail1() {
         }
         return false;
     };
-    console.log(isPending);
+
     const handleInvestment = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isPending) {
+            return;
+        }
         setIsPending(true);
         setHash("");
         try {
@@ -255,6 +275,49 @@ export default function TopicDetail1() {
         }
     };
 
+    const handleWithdraw = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isWithdrawalPending) {
+            return;
+        }
+        setIsWithdrawalPending(true);
+        setWithdrawalHash("");
+        try {
+            await preProcessing();
+
+            const tokenAddress = topic?.tokenAddress;
+
+            if (!tokenAddress) {
+                return;
+            }
+
+            const contractAddress = pivotTopicContractAddress[chainId!];
+            const walletClient = await getWagmiWalletClient();
+
+            const hash = await writeContract(walletClient, {
+                address: contractAddress,
+                abi: PivotTopicABI,
+                functionName: "withdraw",
+                args: [id],
+            });
+            setWithdrawalHash(hash);
+            const res = await waitForTransactionReceipt(publicClient, { hash });
+            console.log({ res });
+            //navigate('/');
+            setIsWithdrawalPending(false);
+
+            notification.success({
+                message: "success",
+                description: "Successfully withdrawn",
+                duration: 3,
+            });
+            getContractData(topic);
+        } catch (error) {
+            console.log(error);
+            setIsWithdrawalPending(false);
+        }
+    };
+
     const handleComment = async (e: React.FormEvent) => {
         e.preventDefault();
         // Add comment submission logic here
@@ -310,9 +373,36 @@ export default function TopicDetail1() {
 
                 <form onSubmit={handleInvestment} className="investment-form">
                     <input type="number" value={investmentAmount} onChange={(e) => setInvestmentAmount(e.target.value)} placeholder="Enter investment amount" required />
-                    <button type="submit">{isPending ? "Investing..." : "Invest"} </button>
+                    <button type="submit" disabled={!topic.tokenAddress}>
+                        {isPending ? "Investing..." : "Invest"}{" "}
+                    </button>
                 </form>
                 {hash && <div>Transaction Hash of Investing the PIVOT Topic: {hash}</div>}
+            </div>
+
+            <div className="investment-section">
+                <div className="investment-info">
+                    <h2>Withdraw</h2>
+
+                    <div className="investment-stats-wrapper">
+                        <div className="investment-stats">
+                            <span>Withdrawable amount: {topic.myIncome}</span>
+                            <span>{topic.tokenSymbol}</span>
+                        </div>
+
+                        <div className="investment-stats">
+                            <span>My Token Balance: {topic.myTokenBalance}</span>
+                            <span>{topic.tokenSymbol}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form onSubmit={handleWithdraw} className="investment-form">
+                    <button type="submit" disabled={!topic.tokenAddress}>
+                        {isWithdrawalPending ? "Withdrawing..." : "Withdraw"}{" "}
+                    </button>
+                </form>
+                {withdrawalHash && <div>Transaction Hash of Withdrawal: {withdrawalHash}</div>}
             </div>
 
             <div className="comments-section">
