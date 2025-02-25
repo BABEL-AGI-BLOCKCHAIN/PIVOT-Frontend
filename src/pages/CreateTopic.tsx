@@ -1,18 +1,27 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import "./CreateTopic.css";
 import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 
 import { formatUnits, maxUint256, parseUnits } from "viem";
-import { Address, Chain, keccak256, toBytes } from "viem";
+import { Address, keccak256, toBytes } from "viem";
 import { BigNumber } from "bignumber.js";
 import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
 import { notification } from "antd";
 import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
 import { pivotTopicContractAddress } from "src/contracts/address";
+import { FileUploader } from "src/components/FileUploader";
+
+export type FormData = {
+    title: string;
+    content: string;
+    resource: string;
+    resourceFile: File | null;
+    investmentAmount: string;
+    tokenAddress: string;
+};
 
 export default function CreateTopic() {
     const { chainId, address } = useAccount();
@@ -32,6 +41,7 @@ export default function CreateTopic() {
         title: "",
         content: "",
         resource: "",
+        resourceFile: null as File | null,
         investmentAmount: "",
         tokenAddress: "",
     });
@@ -46,6 +56,21 @@ export default function CreateTopic() {
         })) as number;
         return tokenDecimals;
     };
+
+    // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const file = e.target.files?.[0];
+    //     if (file && file.size > 5 * 1024 * 1024) {
+    //         console.error("The file size exceeds 5MB. Please choose a smaller file.");
+    //         return;
+    //     }
+    //     if (file) {
+    //         const reader = new FileReader();
+    //         reader.onloadend = () => {
+    //             setFormData((data) => ({ ...data, resource: reader.result as string, resourceFile: file }));
+    //         };
+    //         reader.readAsDataURL(file);
+    //     }
+    // };
 
     const checkBalance = async (paymentAmount: string, tokenDecimals: number) => {
         const result = (await readContract(publicClient, {
@@ -162,8 +187,9 @@ export default function CreateTopic() {
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="resource">Resource URL</label>
-                    <input type="url" id="resource" name="resource" value={formData.resource} onChange={handleChange} required />
+                    <label htmlFor="resource">Media File</label>
+                    {/* <input type="url" id="resource" name="resource" value={formData.resource} onChange={handleChange} required /> */}
+                    <FileUploader formData={formData} setFormData={setFormData} />
                 </div>
 
                 <div className="form-group">
