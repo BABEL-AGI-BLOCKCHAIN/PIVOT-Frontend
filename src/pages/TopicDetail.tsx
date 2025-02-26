@@ -7,7 +7,7 @@ import { readContract, waitForTransactionReceipt, writeContract } from "viem/act
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import BigNumber from "bignumber.js";
 import { pivotTopicContractAddress } from "src/contracts/address";
-import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
+import { formatDecimal, getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { maxUint256, Address, formatUnits, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
@@ -356,17 +356,17 @@ export default function TopicDetail1() {
 
                     <div className="investment-stats-wrapper">
                         <div className="investment-stats">
-                            <span>Minimum Investment Amount: {topic.minimumInvestmentAmount}</span>
+                            <span>Minimum Investment Amount: {formatDecimal(topic.minimumInvestmentAmount)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
 
                         <div className="investment-stats">
-                            <span>My Token Balance: {topic.myTokenBalance}</span>
+                            <span>My Token Balance: {formatDecimal(topic.myTokenBalance)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
 
                         <div className="investment-stats">
-                            <span>My Investment: {topic.myInvestment}</span>
+                            <span>My Investment: {formatDecimal(topic.myInvestment)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
                     </div>
@@ -387,12 +387,12 @@ export default function TopicDetail1() {
 
                     <div className="investment-stats-wrapper">
                         <div className="investment-stats">
-                            <span>Withdrawable amount: {topic.myIncome}</span>
+                            <span>Withdrawable amount: {formatDecimal(topic.myIncome)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
 
                         <div className="investment-stats">
-                            <span>My Token Balance: {topic.myTokenBalance}</span>
+                            <span>My Token Balance: {formatDecimal(topic.myTokenBalance)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
                     </div>

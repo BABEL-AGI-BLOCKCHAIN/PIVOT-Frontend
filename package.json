@@ -15,6 +15,7 @@
     "@wagmi/core": "^2.16.3",
     "antd": "^5.23.4",
     "bignumber.js": "^9.1.2",
+    "decimal.js": "^10.5.0",
     "lucide-react": "^0.476.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
