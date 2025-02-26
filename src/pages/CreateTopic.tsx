@@ -13,6 +13,7 @@ import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
 import { pivotTopicContractAddress } from "src/contracts/address";
 import { FileUploader } from "src/components/FileUploader";
+import { useContractAddress } from "src/hooks/useContractAddress";
 
 export type FormData = {
     title: string;
@@ -45,6 +46,8 @@ export default function CreateTopic() {
         investmentAmount: "",
         tokenAddress: "",
     });
+
+    const contractAddress = useContractAddress();
 
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
 
@@ -109,8 +112,6 @@ export default function CreateTopic() {
                 setIsPending(false);
                 return;
             }
-
-            const contractAddress = pivotTopicContractAddress[chainId!];
 
             const result = (await readContract(publicClient, {
                 abi: ERC20ABI,

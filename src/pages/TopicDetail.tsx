@@ -11,6 +11,8 @@ import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { maxUint256, Address, formatUnits, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
+import { mainnet, sepolia } from "viem/chains";
+import { useContractAddress } from "src/hooks/useContractAddress";
 
 interface Comment {
     id: string;
@@ -57,11 +59,12 @@ export default function TopicDetail1() {
 
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
 
+    const contractAddress = useContractAddress();
+
     const getMyInvestment = async () => {
         if (!address) {
             return;
         }
-        const contractAddress = pivotTopicContractAddress[chainId!];
         const myInvestment = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
@@ -84,19 +87,20 @@ export default function TopicDetail1() {
         return result;
     };
 
-    const getMyIncome = async (investor: Address, topicId: string) => {
-        const contractAddress = pivotTopicContractAddress[chainId!];
+    const getMyIncome = async (address: Address, topicId: string) => {
+        if (!address) {
+            return;
+        }
         const result = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
             functionName: "getIncome",
-            args: [investor, topicId],
+            args: [address, topicId],
         })) as bigint;
         return result;
     };
 
     const getTokenInfo = async () => {
-        const contractAddress = pivotTopicContractAddress[chainId!];
         const tokenAddress = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
@@ -119,7 +123,6 @@ export default function TopicDetail1() {
     };
 
     const getMinimumInvestmentAmount = async () => {
-        const contractAddress = pivotTopicContractAddress[chainId!];
         const result = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
@@ -225,7 +228,6 @@ export default function TopicDetail1() {
                 setIsPending(false);
                 return;
             }
-            const contractAddress = pivotTopicContractAddress[chainId!];
 
             const result = (await readContract(publicClient, {
                 abi: ERC20ABI,
@@ -291,7 +293,6 @@ export default function TopicDetail1() {
                 return;
             }
 
-            const contractAddress = pivotTopicContractAddress[chainId!];
             const walletClient = await getWagmiWalletClient();
 
             const hash = await writeContract(walletClient, {
