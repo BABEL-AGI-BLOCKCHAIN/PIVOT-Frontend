@@ -13,5 +13,8 @@ export async function getWagmiWalletClient() {
 }
 
 export function formatDecimal(value: Decimal.Value, decimalPlaces = 2, roundingMode = Decimal.ROUND_DOWN) {
+    if (!value) {
+        return '0';
+    }
     return new Decimal(value).toDecimalPlaces(decimalPlaces, roundingMode).toString();
 }
