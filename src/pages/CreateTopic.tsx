@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 
-import { formatUnits, maxUint256, parseUnits } from "viem";
+import { decodeAbiParameters, formatUnits, maxUint256, parseAbiParameters, parseUnits } from "viem";
 import { Address, keccak256, toBytes } from "viem";
 import { BigNumber } from "bignumber.js";
 import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
@@ -151,6 +151,13 @@ export default function CreateTopic() {
             console.log({ hash });
             const res = await waitForTransactionReceipt(publicClient, { hash });
             console.log({ res });
+            const topic = keccak256(toBytes("CreateTopic(address,uint256,uint256,uint256,address,uint256)"));
+            const log = res.logs.find((l) => l.topics[0] === topic);
+            if (log?.data) {
+                let topicId = decodeAbiParameters(parseAbiParameters(["uint256"]), log.data as any)[0];
+                console.log({ topicId });
+            }
+
             //navigate('/');
             setIsPending(false);
             notification.success({
