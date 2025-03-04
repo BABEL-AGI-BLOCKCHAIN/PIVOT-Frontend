@@ -156,7 +156,7 @@ export default function TopicDetail1() {
             title: "Emerging DeFi Project Investment",
             content: "This is a promising DeFi project with an innovative tokenomics model...",
             author: "0x1234...5678",
-            image: "https://placeholder.com/800x400",
+            image: "https://pbs.twimg.com/media/GgOZFNqXQAA5RGQ?format=jpg&name=small",
             totalInvestment: 1000000,
             investmentAmount: 1000,
             currentPosition: 500,
@@ -171,7 +171,7 @@ export default function TopicDetail1() {
                     content: "Great investment opportunity!",
                     timestamp: "2024-01-13 11:00",
                 },
-            ],
+            ].flatMap((item) => Array(9).fill(item)),
         };
         const newTopic = { ...(topic as TopicDetail), ...mockTopic };
         setTopic(newTopic);
@@ -331,10 +331,10 @@ export default function TopicDetail1() {
     }
 
     return (
-        <div className="topic-detail">
-            <div className="topic-header">
+        <div className="detail-topic-detail">
+            <div className="detail-topic-header">
                 <h1>{topic.title}</h1>
-                <div className="topic-meta">
+                <div className="detail-topic-meta">
                     <span className="author">Author: {topic.author}</span>
                     <span className="publish-time">Published: {topic.publishTime}</span>
                     <span>Total Investment: {topic.totalInvestment}</span>
@@ -342,30 +342,30 @@ export default function TopicDetail1() {
                 </div>
             </div>
 
-            <div className="topic-image">
+            <div className="detail-topic-image">
                 <img src={topic.image} alt={topic.title} />
             </div>
 
-            <div className="topic-content">
+            <div className="detail-topic-content">
                 <p>{topic.content}</p>
             </div>
 
-            <div className="investment-section">
-                <div className="investment-info">
+            <div className="detail-investment-section">
+                <div className="detail-investment-info">
                     <h2>Invest</h2>
 
-                    <div className="investment-stats-wrapper">
-                        <div className="investment-stats">
+                    <div className="detail-investment-stats-wrapper">
+                        <div className="detail-investment-stats">
                             <span>Minimum Investment Amount: {formatDecimal(topic.minimumInvestmentAmount)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
 
-                        <div className="investment-stats">
+                        <div className="detail-investment-stats">
                             <span>My Token Balance: {formatDecimal(topic.myTokenBalance)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
 
-                        <div className="investment-stats">
+                        <div className="detail-investment-stats">
                             <span>My Investment: {formatDecimal(topic.myInvestment)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
@@ -381,17 +381,17 @@ export default function TopicDetail1() {
                 {hash && <div>Transaction Hash of Investing the PIVOT Topic: {hash}</div>}
             </div>
 
-            <div className="investment-section">
-                <div className="investment-info">
+            <div className="detail-investment-section">
+                <div className="detail-investment-info">
                     <h2>Withdraw</h2>
 
-                    <div className="investment-stats-wrapper">
-                        <div className="investment-stats">
+                    <div className="detail-investment-stats-wrapper">
+                        <div className="detail-investment-stats">
                             <span>Withdrawable amount: {formatDecimal(topic.myIncome)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>
 
-                        <div className="investment-stats">
+                        <div className="detail-investment-stats">
                             <span>My Token Balance: {formatDecimal(topic.myTokenBalance)}</span>
                             <span>{topic.tokenSymbol}</span>
                         </div>

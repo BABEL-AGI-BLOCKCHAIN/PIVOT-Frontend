@@ -1,43 +1,43 @@
-.topic-detail {
+.detail-topic-detail {
     padding-top: 80px;
     max-width: 1200px;
     margin: 0 auto;
     padding: 80px 1rem 2rem;
 }
 
-.topic-header {
+.detail-topic-header {
     margin-bottom: 2rem;
 }
 
-.topic-header h1 {
+.detail-topic-header h1 {
     margin: 0 0 1rem 0;
     font-size: 2rem;
 }
 
-.topic-meta {
+.detail-topic-meta {
     display: flex;
     gap: 1rem;
     color: #666;
     font-size: 0.875rem;
 }
 
-.topic-image {
+/* .topic-image {
     margin-bottom: 2rem;
-}
+} */
 
-.topic-image img {
-    width: 100%;
-    max-height: 500px;
+.detail-topic-image img {
+    max-width: 100%;
+    max-height: 250px;
     object-fit: cover;
     border-radius: 8px;
 }
 
-.topic-content {
+.detail-topic-content {
     margin-bottom: 2rem;
     line-height: 1.6;
 }
 
-.investment-section {
+.detail-investment-section {
     background: white;
     padding: 1.5rem;
     border-radius: 8px;
@@ -45,14 +45,14 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.investment-info {
+.detail-investment-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
 }
 
-.investment-info h2 {
+.detail-investment-info h2 {
     margin: 0;
 }
 
@@ -68,12 +68,12 @@
     border-radius: 50%;
 }
 
-.investment-stats-wrapper {
+.detail-investment-stats-wrapper {
     display: flex;
     gap: 2rem;
 }
 
-.investment-stats {
+.detail-investment-stats {
     display: flex;
     gap: 0.3rem;
 }
@@ -136,6 +136,8 @@
 .comments-list {
     display: flex;
     flex-direction: column;
+    max-height: 300px;
+    overflow-y: auto;
     gap: 1rem;
 }
 

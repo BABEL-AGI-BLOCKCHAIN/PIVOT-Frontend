@@ -6,46 +6,52 @@
     background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 1000;
-  }
-  
-  .header-content {
+}
+
+.header-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  
-  .logo {
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 1.5rem;
     font-weight: bold;
     text-decoration: none;
     color: #333;
-  }
-  
-  .header-actions {
+}
+
+.logo img {
+    width: 3rem;
+}
+
+.header-actions {
     display: flex;
     gap: 1rem;
-  }
-  
-  .create-button, .connect-wallet {
+}
+
+.create-button,
+.connect-wallet {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     border: none;
     font-size: 1rem;
     cursor: pointer;
     text-decoration: none;
-  }
-  
-  .create-button {
+}
+
+.create-button {
     background: #1a73e8;
     color: white;
-  }
-  
-  .connect-wallet {
+}
+
+.connect-wallet {
     background: #34a853;
     color: white;
-  }
-  
-  
+}

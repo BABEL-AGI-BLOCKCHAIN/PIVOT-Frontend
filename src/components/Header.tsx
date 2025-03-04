@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Link } from "react-router-dom";
+import Logo from "../assets/logo.png";
+
 import "./Header.css";
 
 type EthereumRequest = {
@@ -32,6 +34,7 @@ export default function Header() {
         <header className="header">
             <div className="header-content">
                 <Link to="/" className="logo">
+                    <img src={Logo} />
                     PIVOT
                 </Link>
                 <div className="header-actions">
