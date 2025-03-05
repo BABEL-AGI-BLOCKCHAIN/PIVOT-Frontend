@@ -1,19 +1,19 @@
-import React, { useState, useMemo } from "react";
-import "./CreateTopic.css";
+import React, { useState, useMemo, useEffect } from "react";
 import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 
-import { decodeAbiParameters, formatUnits, maxUint256, parseAbiParameters, parseUnits } from "viem";
+import { decodeAbiParameters, formatUnits, isAddress, maxUint256, parseAbiParameters, parseUnits } from "viem";
 import { Address, keccak256, toBytes } from "viem";
 import { BigNumber } from "bignumber.js";
 import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
 import { notification } from "antd";
-import { getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
+import { cn, getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
-import { pivotTopicContractAddress } from "src/contracts/address";
 import { FileUploader } from "src/components/FileUploader";
 import { useContractAddress } from "src/hooks/useContractAddress";
+import { ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export type FormData = {
     title: string;
@@ -30,6 +30,7 @@ export default function CreateTopic() {
 
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
+    const [topicId, setTopicId] = useState("");
 
     const openNotificationWithIcon = (description: string) => {
         notification.error({
@@ -60,21 +61,6 @@ export default function CreateTopic() {
         return tokenDecimals;
     };
 
-    // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const file = e.target.files?.[0];
-    //     if (file && file.size > 5 * 1024 * 1024) {
-    //         console.error("The file size exceeds 5MB. Please choose a smaller file.");
-    //         return;
-    //     }
-    //     if (file) {
-    //         const reader = new FileReader();
-    //         reader.onloadend = () => {
-    //             setFormData((data) => ({ ...data, resource: reader.result as string, resourceFile: file }));
-    //         };
-    //         reader.readAsDataURL(file);
-    //     }
-    // };
-
     const checkBalance = async (paymentAmount: string, tokenDecimals: number) => {
         const result = (await readContract(publicClient, {
             abi: ERC20ABI,
@@ -92,10 +78,20 @@ export default function CreateTopic() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsPending(true);
+        setHash("");
+        setTopicId("");
 
         try {
             const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
             await preProcessing();
+
+            if (!isAddress(formData.tokenAddress)) {
+                console.log("Not a valid ERC20 token contract address");
+                openNotificationWithIcon("Not a valid ERC20 token contract address");
+                setIsPending(false);
+                return;
+            }
+
             const tokenDecimals = await getTokenDecimals();
             console.log("Form submitted:", formData);
 
@@ -154,7 +150,8 @@ export default function CreateTopic() {
             const topic = keccak256(toBytes("CreateTopic(address,uint256,uint256,uint256,address,uint256)"));
             const log = res.logs.find((l) => l.topics[0] === topic);
             if (log?.data) {
-                let topicId = decodeAbiParameters(parseAbiParameters(["uint256"]), log.data as any)[0];
+                let topicId = decodeAbiParameters(parseAbiParameters(["uint256"]), log.data as any)[0]?.toString();
+                setTopicId(topicId);
                 console.log({ topicId });
             }
 
@@ -165,8 +162,14 @@ export default function CreateTopic() {
                 description: "Successfully created",
                 duration: 3,
             });
-        } catch (error) {
-            console.log(error);
+        } catch (error: any) {
+            const err = error.cause?.shortMessage || error.message || error.response?.data;
+            if (error?.cause?.name === "ContractFunctionZeroDataError") {
+                openNotificationWithIcon("Not a valid ERC20 token contract address");
+            } else if (err) {
+                openNotificationWithIcon(err.slice(0, 60));
+            }
+
             setIsPending(false);
         }
     };
@@ -180,41 +183,91 @@ export default function CreateTopic() {
     };
 
     return (
-        <div className="create-topic">
-            <form onSubmit={handleSubmit} className="create-topic-form">
-                <h1>Create New Topic</h1>
+        <div className="pt-28 max-w-2xl mx-auto px-4">
+            <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md border border-gray-100">
+                <h1 className="text-center text-2xl font-semibold mb-6">Create New Topic</h1>
 
-                <div className="form-group">
-                    <label htmlFor="title">Title</label>
-                    <input type="text" id="title" name="title" value={formData.title} onChange={handleChange} required />
+                <div className="mb-4">
+                    <label htmlFor="title" className="block font-medium mb-2">
+                        Title
+                    </label>
+                    <input type="text" id="title" name="title" value={formData.title} onChange={handleChange} required className="w-full p-2 border border-gray-300 rounded-md text-base" />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="content">Content</label>
-                    <textarea id="content" name="content" value={formData.content} onChange={handleChange} required />
+                <div className="mb-4">
+                    <label htmlFor="content" className="block font-medium mb-2">
+                        Content
+                    </label>
+                    <textarea
+                        id="content"
+                        name="content"
+                        value={formData.content}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border border-gray-300 rounded-md text-base min-h-[150px] resize-y"
+                    />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="resource">Media File</label>
-                    {/* <input type="url" id="resource" name="resource" value={formData.resource} onChange={handleChange} required /> */}
+                <div className="mb-4">
+                    <label htmlFor="resource" className="block font-medium mb-2">
+                        Media File
+                    </label>
                     <FileUploader formData={formData} setFormData={setFormData} />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="investmentAmount">Investment Amount</label>
-                    <input type="number" id="investmentAmount" name="investmentAmount" value={formData.investmentAmount} onChange={handleChange} required />
+                <div className="mb-4">
+                    <label htmlFor="investmentAmount" className="block font-medium mb-2">
+                        Investment Amount
+                    </label>
+                    <input
+                        type="number"
+                        id="investmentAmount"
+                        name="investmentAmount"
+                        value={formData.investmentAmount}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border border-gray-300 rounded-md text-base"
+                    />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="tokenAddress">ERC20 Token Contract Address</label>
-                    <input type="text" id="tokenAddress" name="tokenAddress" value={formData.tokenAddress} onChange={handleChange} required />
+                <div className="mb-6">
+                    <label htmlFor="tokenAddress" className="block font-medium mb-2">
+                        ERC20 Token Contract Address
+                    </label>
+                    <input
+                        type="text"
+                        id="tokenAddress"
+                        name="tokenAddress"
+                        value={formData.tokenAddress}
+                        onChange={handleChange}
+                        required
+                        className="w-full p-2 border border-gray-300 rounded-md text-base"
+                    />
                 </div>
 
-                <button type="submit" className="submit-button" disabled={isPending}>
+                <button type="submit" className="w-full p-3 bg-blue-600 text-white rounded-md text-md hover:bg-blue-700 font-bold" disabled={isPending}>
                     {isPending ? "Creating Topic..." : "Create Topic"}
                 </button>
 
-                {hash && <div>Transaction Hash of Creating a PIVOT Topic: {hash}</div>}
+                <div className={cn("mt-4 break-words", !hash && "hidden")}>
+                    <div>Transaction Hash:</div>
+                    <div className="text-sm text-gray-600">
+                        {hash}{" "}
+                        <Link to={`https://${process.env.REACT_APP_ENABLE_TESTNETS === "true" ? "sepolia." : ""}etherscan.io/tx/${hash}`} target="_blank" className="inline-flex relative top-[3px]">
+                            <ArrowUpRight className="h-[18px] text-blue-600" />
+                        </Link>
+                    </div>
+                </div>
+                <div className={cn("mt-4 break-words", !topicId && "hidden")}>
+                    <div className="text-md text-gray-600">
+                        <Link to={`/topic/${topicId}`} className="inline-flex relative top-[3px] w-full">
+                            <button type="submit" className="w-full p-3 bg-blue-600 text-white rounded-md text-md hover:bg-blue-700 font-bold" disabled={isPending}>
+                                View Your Topic
+                                <ArrowUpRight className="inline-flex pb-[2px]" />
+                            </button>
+                        </Link>
+                    </div>
+                </div>
             </form>
         </div>
     );

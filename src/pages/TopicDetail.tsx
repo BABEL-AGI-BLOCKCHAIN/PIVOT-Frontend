@@ -1,27 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import "./TopicDetail.css";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
-import { notification } from "antd";
-import { readContract, waitForTransactionReceipt, writeContract } from "viem/actions";
+import { readContract } from "viem/actions";
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
-import BigNumber from "bignumber.js";
-import { pivotTopicContractAddress } from "src/contracts/address";
-import { formatDecimal, getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
-import { maxUint256, Address, formatUnits, parseUnits } from "viem";
+import { getWagmiPublicClient } from "src/utils";
+import { Address, formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
-import { mainnet, sepolia } from "viem/chains";
 import { useContractAddress } from "src/hooks/useContractAddress";
+import Trade from "src/components/Trade";
+import CommentComponent, { Comment } from "src/components/Comment";
+import Stats from "src/components/Stats";
 
-interface Comment {
-    id: string;
-    author: string;
-    content: string;
-    timestamp: string;
-}
-
-interface TopicDetail {
+export interface TopicDetail {
     id: string;
     title: string;
     content: string;
@@ -43,7 +34,7 @@ interface TopicDetail {
     comments: Comment[];
 }
 
-export default function TopicDetail1() {
+export default function TopicDetail() {
     const { id } = useParams();
     const [topic, setTopic] = useState<TopicDetail>();
     const [newComment, setNewComment] = useState("");
@@ -178,251 +169,50 @@ export default function TopicDetail1() {
         getContractData(newTopic, true);
     }, [id]);
 
-    const openNotificationWithIcon = (description: string) => {
-        notification.error({
-            message: "error",
-            description,
-            duration: 3,
-        });
-    };
-
-    const checkInvestmentAmount = async (investmentAmount: string) => {
-        if (Number(investmentAmount) > 0 && BigNumber(investmentAmount).mod(topic!.minimumInvestmentAmount).toNumber() == 0) {
-            return true;
-        }
-        return false;
-    };
-
-    const checkBalance = async (paymentAmount: string) => {
-        if (topic?.myTokenBalance && BigNumber(topic?.myTokenBalance).gte(paymentAmount)) {
-            return true;
-        }
-        return false;
-    };
-
-    const handleInvestment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isPending) {
+    useEffect(() => {
+        if (!topic) {
             return;
         }
-        setIsPending(true);
-        setHash("");
-        try {
-            await preProcessing();
-
-            const tokenAddress = topic?.tokenAddress;
-            const investmentAmountLocaleString = Number(investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
-
-            if (!tokenAddress) {
-                return;
-            }
-
-            if (!(await checkBalance(investmentAmountLocaleString))) {
-                openNotificationWithIcon("Insufficient balance");
-                setIsPending(false);
-                return;
-            }
-
-            if (!(await checkInvestmentAmount(investmentAmountLocaleString))) {
-                openNotificationWithIcon("It is not a multiple of the creator's investment amount");
-                setIsPending(false);
-                return;
-            }
-
-            const result = (await readContract(publicClient, {
-                abi: ERC20ABI,
-                address: tokenAddress,
-                functionName: "allowance",
-                args: [address, contractAddress],
-            })) as bigint;
-
-            console.log(investmentAmountLocaleString, formatUnits(result, topic.tokenDecimals));
-
-            const walletClient = await getWagmiWalletClient();
-
-            if (BigNumber(investmentAmountLocaleString).gt(formatUnits(result, topic.tokenDecimals))) {
-                const hash = await writeContract(walletClient, {
-                    address: tokenAddress,
-                    abi: ERC20ABI,
-                    functionName: "approve",
-                    args: [contractAddress, maxUint256],
-                });
-                console.log({ hash });
-                const res = await waitForTransactionReceipt(publicClient, { hash });
-                console.log({ res });
-            }
-
-            const hash = await writeContract(walletClient, {
-                address: contractAddress,
-                abi: PivotTopicABI,
-                functionName: "invest",
-                args: [id, parseUnits(investmentAmountLocaleString, topic.tokenDecimals)],
-            });
-            setHash(hash);
-            console.log({ hash });
-            const res = await waitForTransactionReceipt(publicClient, { hash });
-            console.log({ res });
-            //navigate('/');
-            setIsPending(false);
-
-            notification.success({
-                message: "success",
-                description: "Successfully invested",
-                duration: 3,
-            });
-            getContractData(topic);
-        } catch (error) {
-            console.log(error);
-            setIsPending(false);
-        }
-    };
-
-    const handleWithdraw = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isWithdrawalPending) {
-            return;
-        }
-        setIsWithdrawalPending(true);
-        setWithdrawalHash("");
-        try {
-            await preProcessing();
-
-            const tokenAddress = topic?.tokenAddress;
-
-            if (!tokenAddress) {
-                return;
-            }
-
-            const walletClient = await getWagmiWalletClient();
-
-            const hash = await writeContract(walletClient, {
-                address: contractAddress,
-                abi: PivotTopicABI,
-                functionName: "withdraw",
-                args: [id],
-            });
-            setWithdrawalHash(hash);
-            const res = await waitForTransactionReceipt(publicClient, { hash });
-            console.log({ res });
-            //navigate('/');
-            setIsWithdrawalPending(false);
-
-            notification.success({
-                message: "success",
-                description: "Successfully withdrawn",
-                duration: 3,
-            });
-            getContractData(topic);
-        } catch (error) {
-            console.log(error);
-            setIsWithdrawalPending(false);
-        }
-    };
-
-    const handleComment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        // Add comment submission logic here
-        console.log("New comment:", newComment);
-        setNewComment("");
-    };
+        getContractData(topic, true);
+    }, [address, chainId]);
 
     if (!topic) {
         return <div className="loading">Loading...</div>;
     }
 
     return (
-        <div className="detail-topic-detail">
-            <div className="detail-topic-header">
-                <h1>{topic.title}</h1>
-                <div className="detail-topic-meta">
-                    <span className="author">Author: {topic.author}</span>
-                    <span className="publish-time">Published: {topic.publishTime}</span>
+        <div className="pt-20 max-w-6xl mx-auto px-4 pb-8">
+            <div className="mb-8">
+                {/* <h1 className="text-2xl font-bold mb-4">{topic.title}</h1> */}
+                {/* <div className="flex gap-4 text-gray-600 text-sm">
+                    <span className="font-medium">Author: {topic.author}</span>
+                    <span>Published: {topic.publishTime}</span>
                     <span>Total Investment: {topic.totalInvestment}</span>
                     <span>Current Position: {topic.currentPosition}</span>
-                </div>
+                </div> */}
             </div>
-
-            <div className="detail-topic-image">
-                <img src={topic.image} alt={topic.title} />
-            </div>
-
-            <div className="detail-topic-content">
-                <p>{topic.content}</p>
-            </div>
-
-            <div className="detail-investment-section">
-                <div className="detail-investment-info">
-                    <h2>Invest</h2>
-
-                    <div className="detail-investment-stats-wrapper">
-                        <div className="detail-investment-stats">
-                            <span>Minimum Investment Amount: {formatDecimal(topic.minimumInvestmentAmount)}</span>
-                            <span>{topic.tokenSymbol}</span>
-                        </div>
-
-                        <div className="detail-investment-stats">
-                            <span>My Token Balance: {formatDecimal(topic.myTokenBalance)}</span>
-                            <span>{topic.tokenSymbol}</span>
-                        </div>
-
-                        <div className="detail-investment-stats">
-                            <span>My Investment: {formatDecimal(topic.myInvestment)}</span>
-                            <span>{topic.tokenSymbol}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <form onSubmit={handleInvestment} className="investment-form">
-                    <input type="number" value={investmentAmount} onChange={(e) => setInvestmentAmount(e.target.value)} placeholder="Enter investment amount" required />
-                    <button type="submit" disabled={!topic.tokenAddress}>
-                        {isPending ? "Investing..." : "Invest"}{" "}
-                    </button>
-                </form>
-                {hash && <div>Transaction Hash of Investing the PIVOT Topic: {hash}</div>}
-            </div>
-
-            <div className="detail-investment-section">
-                <div className="detail-investment-info">
-                    <h2>Withdraw</h2>
-
-                    <div className="detail-investment-stats-wrapper">
-                        <div className="detail-investment-stats">
-                            <span>Withdrawable amount: {formatDecimal(topic.myIncome)}</span>
-                            <span>{topic.tokenSymbol}</span>
-                        </div>
-
-                        <div className="detail-investment-stats">
-                            <span>My Token Balance: {formatDecimal(topic.myTokenBalance)}</span>
-                            <span>{topic.tokenSymbol}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <form onSubmit={handleWithdraw} className="investment-form">
-                    <button type="submit" disabled={!topic.tokenAddress}>
-                        {isWithdrawalPending ? "Withdrawing..." : "Withdraw"}{" "}
-                    </button>
-                </form>
-                {withdrawalHash && <div>Transaction Hash of Withdrawal: {withdrawalHash}</div>}
-            </div>
-
-            <div className="comments-section">
-                <h2>Comments ({topic.commentsCount})</h2>
-                <form onSubmit={handleComment} className="comment-form">
-                    <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." required />
-                    <button type="submit">Submit Comment</button>
-                </form>
-
-                <div className="comments-list">
-                    {topic.comments.map((comment) => (
-                        <div key={comment.id} className="comment">
-                            <div className="comment-header">
-                                <span className="comment-author">{comment.author}</span>
-                                <span className="comment-time">{comment.timestamp}</span>
+            <div className="flex gap-6 ">
+                <div className="flex-1">
+                    <div>
+                        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                            <h1 className="text-2xl font-bold mb-4">{topic.title}</h1>
+                            <div className="mb-8 leading-relaxed">
+                                <p>{topic.content}</p>
                             </div>
-                            <p className="comment-content">{comment.content}</p>
+                            <div className="mb-8">
+                                <img src={topic.image} alt={topic.title} className="max-h-64 object-cover rounded-lg" />
+                            </div>
+                            <CommentComponent topic={topic} />
                         </div>
-                    ))}
+                    </div>
+                </div>
+                <div className="w-[400px]">
+                    <div>
+                        <Trade topic={topic} getContractData={getContractData} />
+                    </div>
+                    <div className="pt-6">
+                        <Stats topic={topic} />
+                    </div>
                 </div>
             </div>
         </div>

@@ -18,7 +18,7 @@ root.render(
     // <React.StrictMode>
     <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider>
+            <RainbowKitProvider locale="en-US">
                 <App />
             </RainbowKitProvider>
         </QueryClientProvider>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import TopicCard from "../components/TopicCard";
-import "./Home.css";
 
 interface Topic {
     id: string;
@@ -43,8 +42,8 @@ export default function Home() {
     }, []);
 
     return (
-        <div className="home">
-            <div className="topics-container">
+        <div className="pt-20 max-w-6xl mx-auto px-4">
+            <div className="grid gap-8 my-6 grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
                 {topics.map((topic) => (
                     <TopicCard key={topic.id} {...topic} />
                 ))}

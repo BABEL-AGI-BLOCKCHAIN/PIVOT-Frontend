@@ -2,7 +2,6 @@ import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload } from "lucide-react";
 import { type FormData } from "src/pages/CreateTopic";
-import "./FileUploader.css";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -34,16 +33,27 @@ export function FileUploader({ formData, setFormData }: { formData: FormData; se
     });
 
     return (
-        <div className="file-upload-container">
-            <div {...getRootProps()} className={`file-drop-zone ${isDragActive ? "active" : ""}`} style={{ height: "100%", padding: 0 }}>
+        <div className="w-full h-40">
+            <div
+                {...getRootProps()}
+                className={`flex items-center justify-center border-2 border-dashed rounded-md transition-all duration-200 ease-in-out ${
+                    isDragActive ? "border-primary bg-primary/10" : "border-gray-300"
+                } h-full p-0 cursor-pointer`}
+            >
                 <input {...getInputProps()} />
                 {formData.resource ? (
-                    <label>{formData.resourceFile?.type === "video/mp4" ? <video src={formData.resource} controls /> : <img src={formData.resource} />}</label>
+                    <label className="h-full flex cursor-pointer items-center">
+                        {formData.resourceFile?.type === "video/mp4" ? (
+                            <video src={formData.resource} controls className="w-full h-full object-contain" />
+                        ) : (
+                            <img src={formData.resource} className="w-full h-full object-contain" />
+                        )}
+                    </label>
                 ) : (
-                    <div style={{ padding: "1.5rem" }}>
-                        <Upload className="file-drop-zone-icon" />
-                        <p className="file-drop-zone-text">Drag & drop a file here, or click to select</p>
-                        <p className="file-drop-zone-subtext">Supports: JPEG, JPG, PNG, GIF, WEBP, MP4 (max 5MB)</p>
+                    <div className="p-6 text-center">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-600">Drag & drop a file here, or click to select</p>
+                        <p className="mt-1 text-xs text-gray-500">Supports: JPEG, JPG, PNG, GIF, WEBP, MP4 (max 5MB)</p>
                     </div>
                 )}
             </div>
