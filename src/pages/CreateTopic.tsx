@@ -14,6 +14,7 @@ import { FileUploader } from "src/components/FileUploader";
 import { useContractAddress } from "src/hooks/useContractAddress";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useChainId } from "src/hooks/useChainId";
 
 export type FormData = {
     title: string;
@@ -25,7 +26,7 @@ export type FormData = {
 };
 
 export default function CreateTopic() {
-    const { chainId, address } = useAccount();
+    const { address } = useAccount();
     const preProcessing = usePreProcessing();
 
     const [isPending, setIsPending] = useState(false);
@@ -49,6 +50,8 @@ export default function CreateTopic() {
     });
 
     const contractAddress = useContractAddress();
+
+    const chainId = useChainId();
 
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
 

@@ -11,6 +11,7 @@ import { useContractAddress } from "src/hooks/useContractAddress";
 import Trade from "src/components/Trade";
 import CommentComponent, { Comment } from "src/components/Comment";
 import Stats from "src/components/Stats";
+import { useChainId } from "src/hooks/useChainId";
 
 export interface TopicDetail {
     id: string;
@@ -46,7 +47,8 @@ export default function TopicDetail() {
 
     const [hash, setHash] = useState("");
     const [withdrawalHash, setWithdrawalHash] = useState("");
-    const { chainId, address } = useAccount();
+    const { address } = useAccount();
+    const chainId = useChainId();
 
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
 
@@ -92,6 +94,7 @@ export default function TopicDetail() {
     };
 
     const getTokenInfo = async () => {
+        console.log({ contractAddress });
         const tokenAddress = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
@@ -174,7 +177,7 @@ export default function TopicDetail() {
             return;
         }
         getContractData(topic, true);
-    }, [address, chainId]);
+    }, [address]);
 
     if (!topic) {
         return <div className="loading">Loading...</div>;
