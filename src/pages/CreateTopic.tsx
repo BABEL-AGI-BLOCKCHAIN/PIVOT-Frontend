@@ -166,7 +166,7 @@ export default function CreateTopic() {
                 duration: 3,
             });
         } catch (error: any) {
-            const err = error.cause?.shortMessage || error.message || error.response?.data;
+            const err = error?.cause?.shortMessage || error?.message || error?.response?.data || error;
             if (error?.cause?.name === "ContractFunctionZeroDataError") {
                 openNotificationWithIcon("Not a valid ERC20 token contract address");
             } else if (err) {

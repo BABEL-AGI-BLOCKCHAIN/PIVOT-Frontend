@@ -132,8 +132,12 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                 duration: 3,
             });
             getContractData(topic);
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
+            const err = error?.cause?.shortMessage || error?.message || error;
+            if (err) {
+                openNotificationWithIcon(err.slice(0, 60));
+            }
             setIsPending(false);
         }
     };
@@ -174,8 +178,12 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                 duration: 3,
             });
             getContractData(topic);
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
+            const err = error?.cause?.shortMessage || error?.message || error;
+            if (err) {
+                openNotificationWithIcon(err.slice(0, 60));
+            }
             setIsWithdrawalPending(false);
         }
     };
