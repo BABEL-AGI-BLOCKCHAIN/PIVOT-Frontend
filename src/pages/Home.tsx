@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import TopicCard from "../components/TopicCard";
 import axios from 'axios';
+import { useEffect, useState } from "react";
+import { ENDPOINTS } from '../config';
+import TopicCard from "../components/TopicCard";
+
 interface Topic {
     id: string;
     title: string;
@@ -17,7 +19,7 @@ interface Topic {
 
 const fetchTopics = async (page = 1, limit = 10, sortField = 'blockTimeStamp', sortOrder = 'desc') => {
     try {
-        const response = await axios.get('https://ziopwmhohqon.usw.sealos.io/api/v1/topic/getTopics', {
+        const response = await axios.get(ENDPOINTS.GET_TOPICS, {
             params: {
                 page,
                 limit,
