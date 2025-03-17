@@ -12,7 +12,8 @@ import Trade from "src/components/Trade";
 import CommentComponent, { Comment } from "src/components/Comment";
 import Stats from "src/components/Stats";
 import { useChainId } from "src/hooks/useChainId";
-
+import axios from "axios";
+import { ENDPOINTS } from "src/config";
 export interface TopicDetail {
     id: string;
     title: string;
@@ -144,32 +145,19 @@ export default function TopicDetail() {
     };
 
     useEffect(() => {
-        // Mock data - replace with actual API call
-        const mockTopic = {
-            id: "1",
-            title: "Emerging DeFi Project Investment",
-            content: "This is a promising DeFi project with an innovative tokenomics model...",
-            author: "0x1234...5678",
-            image: "https://pbs.twimg.com/media/GgOZFNqXQAA5RGQ?format=jpg&name=small",
-            totalInvestment: 1000000,
-            investmentAmount: 1000,
-            currentPosition: 500,
-            commentsCount: 42,
-            publishTime: "2024-01-13 10:00",
-            tokenName: "USDT",
-            tokenLogo: "https://placeholder.com/token-logo.png",
-            comments: [
-                {
-                    id: "1",
-                    author: "0xabcd...efgh",
-                    content: "Great investment opportunity!",
-                    timestamp: "2024-01-13 11:00",
-                },
-            ].flatMap((item) => Array(9).fill(item)),
+        const fetchTopic = async () => {
+            try {
+                const response = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id));
+                console.log("response", response);
+                const topicData = response.data.topic;
+                setTopic(topicData);
+                getContractData(topicData, true);
+            } catch (error) {
+                console.error('Error fetching topic:', error);
+            }
         };
-        const newTopic = { ...(topic as TopicDetail), ...mockTopic };
-        setTopic(newTopic);
-        getContractData(newTopic, true);
+
+        fetchTopic();
     }, [id]);
 
     useEffect(() => {

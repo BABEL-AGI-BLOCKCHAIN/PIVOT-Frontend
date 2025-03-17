@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TopicDetail } from "src/pages/TopicDetail";
-
+import axios from "axios";
+import { ENDPOINTS } from "../config";
 export interface Comment {
     id: string;
     author: string;
@@ -14,12 +15,23 @@ interface CommentProps {
 
 export default function Comment({ topic }: CommentProps) {
     const [newComment, setNewComment] = useState("");
+    const [comments, setComments] = useState(topic.comments);
 
     const handleComment = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Add comment submission logic here
-        console.log("New comment:", newComment);
-        setNewComment("");
+        try {
+            const response = await axios.post(ENDPOINTS.POST_COMMENT, {
+                // need to be changed 
+                userId: "0xYourUserId", 
+                topicId: topic.id,
+                comment: newComment,
+            });
+            const createdComment = response.data.comment;
+            setComments([...comments, createdComment]);
+            setNewComment("");
+        } catch (error) {
+            console.error("Error submitting comment:", error);
+        }
     };
 
     return (

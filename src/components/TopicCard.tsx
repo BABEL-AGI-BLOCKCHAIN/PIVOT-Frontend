@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
-
+import axios from "axios";
+import { ENDPOINTS } from '../config';
 interface TopicCardProps {
     id: string;
     title: string;
@@ -13,8 +15,33 @@ interface TopicCardProps {
     publishTime: string;
     tokenSymbol: string;
 }
+const fetchComments = async (topicId: string) => {
+    try {
+        const response = await axios.get(ENDPOINTS.GET_COMMENTS(topicId));
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+    }
+};
 
 export default function TopicCard({ id, title, content, creator, image, totalInvestment, investmentAmount, currentPosition, commentsCount, publishTime, tokenSymbol }: TopicCardProps) {
+    const [comments, setComments] = useState([]);
+
+    useEffect(() => {
+        const loadComments = async () => {
+            try {
+                const data = await fetchComments(id);
+                console.log('data', data);
+                setComments(data);
+            } catch (error) {
+                console.error('Error loading comments:', error);
+            }
+        };
+
+
+        loadComments();
+    }, [id]);
     return (
         <Link to={`/topic/${id}`} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             <div className="w-full h-52 overflow-hidden">
