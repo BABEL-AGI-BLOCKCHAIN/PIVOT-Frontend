@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TopicDetail } from "src/pages/TopicDetail";
 import axios from "axios";
 import { ENDPOINTS } from "../config";
@@ -13,16 +13,40 @@ interface CommentProps {
     topic: TopicDetail;
 }
 
+
+const fetchComments = async (topicId: string, page = 1, limit = 10) => {
+    try {
+        const response = await axios.get(ENDPOINTS.GET_COMMENTS(topicId), {
+            params: { page, limit },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        return { comments: [], pagination: { totalComments: 0, currentPage: 1, totalPages: 1 } };
+    }
+};
+
 export default function Comment({ topic }: CommentProps) {
     const [newComment, setNewComment] = useState("");
     const [comments, setComments] = useState(topic.comments);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    useEffect(() => {
+        const loadComments = async () => {
+            const data = await fetchComments(topic.id, page);
+            setComments(data.comments);
+            setTotalPages(data.pagination.totalPages);
+        };
+
+        loadComments();
+    }, [topic.id, page]);
 
     const handleComment = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const response = await axios.post(ENDPOINTS.POST_COMMENT, {
-                // need to be changed 
-                userId: "0xYourUserId", 
+                userId: process.env.REACT_APP_WALLET_ADDRESS,
                 topicId: topic.id,
                 comment: newComment,
             });
