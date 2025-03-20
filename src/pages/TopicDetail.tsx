@@ -125,11 +125,12 @@ export default function TopicDetail() {
             positions.map(async (item) => {
                 const positionTotalIncome = getMyPositionIncome(fixedInvestment, item, currentPosition);
                 const withdrawnAmount = await getMyPositionWithdrawnAmount(item);
+                const withdrawFee = positionTotalIncome > fixedInvestment ? ((positionTotalIncome - fixedInvestment) * BigInt(3)) / BigInt(1000) : BigInt(0);
                 return {
                     position: item,
                     investmentDate: "2024-01-13 10:00",
-                    totalIncome: positionTotalIncome,
-                    withdrawableAmount: positionTotalIncome - withdrawnAmount!,
+                    totalIncome: positionTotalIncome - withdrawFee,
+                    withdrawableAmount: positionTotalIncome - withdrawnAmount! - withdrawFee,
                 };
             })
         );
@@ -207,23 +208,34 @@ export default function TopicDetail() {
         const currentPosition = await getCurrentPosition();
         const myTokenBalance = await getMyTokenBalance(topic.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
         const myInvestment = await getMyInvestment();
-        const myWithdrawnAmount = await getMyWithdrawnAmount();
+        // const myWithdrawnAmount = await getMyWithdrawnAmount();
         const myPositions = await getMyPositions();
         const myPositionsStats = await getMyPositionsStats(myPositions, minimumInvestmentAmount, currentPosition);
-        const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
+        // const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
         setTopic({
             ...topic,
             ...(isInitial && tokenInfo),
             minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo.tokenDecimals),
             myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
             myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
-            myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),
+            // myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),
             myPositionsStats: myPositionsStats.map((item) => ({
                 ...item,
                 withdrawableAmount: formatUnits(item.withdrawableAmount, tokenInfo.tokenDecimals),
                 totalIncome: formatUnits(item.totalIncome, tokenInfo.tokenDecimals),
             })),
-            myTotalIncome: formatUnits(myTotalIncome ?? BigInt(0), tokenInfo.tokenDecimals),
+            myWithdrawableAmount: formatUnits(
+                myPositionsStats.reduce((acc, item) => {
+                    return acc + item.withdrawableAmount;
+                }, BigInt(0)),
+                tokenInfo.tokenDecimals
+            ),
+            myTotalIncome: formatUnits(
+                myPositionsStats.reduce((acc, item) => {
+                    return acc + item.totalIncome;
+                }, BigInt(0)),
+                tokenInfo.tokenDecimals
+            ),
         });
     };
 
