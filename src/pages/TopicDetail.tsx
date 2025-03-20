@@ -23,7 +23,14 @@ export interface TopicDetail {
     minimumInvestmentAmount: string;
     currentPosition: number;
     myInvestment: string;
-    myIncome: string;
+    myWithdrawableAmount: string;
+    myTotalIncome: string;
+    myPositionsStats: {
+        withdrawableAmount: string;
+        totalIncome: string;
+        position: number;
+        investmentDate: string;
+    }[];
     commentsCount: number;
     publishTime: string;
     tokenName: string;
@@ -80,17 +87,75 @@ export default function TopicDetail() {
         return result;
     };
 
-    const getMyIncome = async (address: Address, topicId: string) => {
+    const getMyPositionWithdrawnAmount = async (position: number) => {
         if (!address) {
             return;
         }
         const result = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
-            functionName: "getIncome",
-            args: [address, topicId],
+            functionName: "_positionReceivedIncome",
+            args: [address, id!, position],
         })) as bigint;
+        console.log({ result });
         return result;
+    };
+
+    const getMyWithdrawnAmount = async () => {
+        if (!address) {
+            return;
+        }
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_receivedIncome",
+            args: [address, id!],
+        })) as bigint;
+        console.log({ result });
+        return result;
+    };
+
+    const getMyPositions = async () => {
+        const positions = [1, 2, 3, 4];
+        return positions;
+    };
+
+    const getMyPositionsStats = async (positions: number[], fixedInvestment: bigint, currentPosition: bigint) => {
+        const res = await Promise.allSettled(
+            positions.map(async (item) => {
+                const positionTotalIncome = getMyPositionIncome(fixedInvestment, item, currentPosition);
+                const withdrawnAmount = await getMyPositionWithdrawnAmount(item);
+                return {
+                    position: item,
+                    investmentDate: "2024-01-13 10:00",
+                    totalIncome: positionTotalIncome,
+                    withdrawableAmount: positionTotalIncome - withdrawnAmount!,
+                };
+            })
+        );
+
+        return res.filter((item) => item.status === "fulfilled").map((item) => item.value);
+    };
+
+    const getMyTotalIncome = (myPositions: number[], fixedInvestment: bigint, currentPosition: bigint) => {
+        const totalIncome = myPositions.reduce((acc, item) => {
+            return acc + getMyPositionIncome(fixedInvestment, item, currentPosition);
+        }, BigInt(0));
+
+        return totalIncome;
+    };
+
+    const getMyPositionIncome = (fixedInvestment: bigint, position: number, currentPosition: bigint) => {
+        let sum = BigInt(0);
+        let _fixedInvestment = fixedInvestment;
+        let _position = Number(position);
+        let _currentPosition = Number(currentPosition);
+
+        for (let i = _position; i <= _currentPosition; i++) {
+            sum = sum += _fixedInvestment / BigInt(i);
+        }
+
+        return sum;
     };
 
     const getTokenInfo = async () => {
@@ -126,20 +191,39 @@ export default function TopicDetail() {
         return result;
     };
 
+    const getCurrentPosition = async () => {
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_position",
+            args: [id],
+        })) as bigint;
+        return result;
+    };
+
     const getContractData = async (topic: TopicDetail, isInitial?: boolean) => {
         const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic.tokenAddress, tokenSymbol: topic.tokenSymbol, tokenDecimals: topic.tokenDecimals };
-        const minimumInvestmentAmount = isInitial && (await getMinimumInvestmentAmount());
+        const minimumInvestmentAmount = await getMinimumInvestmentAmount();
+        const currentPosition = await getCurrentPosition();
         const myTokenBalance = await getMyTokenBalance(topic.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
         const myInvestment = await getMyInvestment();
-        const myIncome = await getMyIncome(address as Address, id!);
-
+        const myWithdrawnAmount = await getMyWithdrawnAmount();
+        const myPositions = await getMyPositions();
+        const myPositionsStats = await getMyPositionsStats(myPositions, minimumInvestmentAmount, currentPosition);
+        const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
         setTopic({
             ...topic,
             ...(isInitial && tokenInfo),
-            ...(isInitial && { minimumInvestmentAmount: formatUnits((minimumInvestmentAmount as bigint) ?? BigInt(0), tokenInfo.tokenDecimals) }),
+            minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo.tokenDecimals),
             myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
             myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
-            myIncome: formatUnits(myIncome ?? BigInt(0), tokenInfo.tokenDecimals),
+            myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),
+            myPositionsStats: myPositionsStats.map((item) => ({
+                ...item,
+                withdrawableAmount: formatUnits(item.withdrawableAmount, tokenInfo.tokenDecimals),
+                totalIncome: formatUnits(item.totalIncome, tokenInfo.tokenDecimals),
+            })),
+            myTotalIncome: formatUnits(myTotalIncome ?? BigInt(0), tokenInfo.tokenDecimals),
         });
     };
 
@@ -151,6 +235,7 @@ export default function TopicDetail() {
             content: "This is a promising DeFi project with an innovative tokenomics model...",
             author: "0x1234...5678",
             image: "https://pbs.twimg.com/media/GgOZFNqXQAA5RGQ?format=jpg&name=small",
+            tokenSymbol: "",
             totalInvestment: 1000000,
             investmentAmount: 1000,
             currentPosition: 500,
