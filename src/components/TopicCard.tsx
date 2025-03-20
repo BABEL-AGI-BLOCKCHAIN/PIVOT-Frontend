@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { ENDPOINTS } from '../config';
+
 interface TopicCardProps {
     id: string;
     title: string;
@@ -15,6 +16,7 @@ interface TopicCardProps {
     publishTime: string;
     tokenSymbol: string;
 }
+
 const fetchComments = async (topicId: string) => {
     try {
         const response = await axios.get(ENDPOINTS.GET_COMMENTS(topicId));
@@ -36,12 +38,15 @@ export default function TopicCard({ id, title, content, creator, image, totalInv
                 setComments(data);
             } catch (error) {
                 console.error('Error loading comments:', error);
+                setComments([]);
             }
         };
 
-
         loadComments();
     }, [id]);
+
+    const actualCommentsCount = comments.length || 0;
+
     return (
         <Link to={`/topic/${id}`} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             <div className="w-full h-52 overflow-hidden">
@@ -74,7 +79,7 @@ export default function TopicCard({ id, title, content, creator, image, totalInv
                 </div>
                 <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
                     <Link to={`/topic/${id}`} className="text-blue-600 hover:underline">
-                        Comments ({commentsCount})
+                        Comments ({actualCommentsCount})
                     </Link>
                     <span className="text-gray-500 text-sm">{publishTime}</span>
                 </div>
