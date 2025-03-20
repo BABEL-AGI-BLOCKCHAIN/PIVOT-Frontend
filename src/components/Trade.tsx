@@ -215,14 +215,18 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <Wallet className="h-5 w-5 mr-4 text-muted-foreground" />
                             <div className="space-y-0.5">
                                 <p className="text-sm font-medium text-muted-foreground">Withdrawable Amount</p>
-                                <p className="text-lg font-semibold">{formatDecimal(item.withdrawableAmount)}</p>
+                                <p className="text-lg font-semibold">
+                                    {formatDecimal(item.withdrawableAmount)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center">
                             <TrendingUp className="h-5 w-5 mr-4 text-muted-foreground" />
                             <div className="space-y-0.5">
                                 <p className="text-sm font-medium text-muted-foreground">Total Income</p>
-                                <p className="text-lg font-semibold text-green-600">{formatDecimal(item.totalIncome)}</p>
+                                <p className="text-lg font-semibold text-green-600">
+                                    {formatDecimal(item.totalIncome)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -284,7 +288,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         </Button>
                     </form>
                     {topic.minimumInvestmentAmount && (
-                        <div className="flex gap-4 flex-wrap pt-6">
+                        <div className="flex gap-3 flex-wrap pt-6">
                             {Array.from({ length: 5 })
                                 .fill(1)
                                 .map((item, index) => (
@@ -294,7 +298,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                                             setInvestmentAmount(new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString());
                                         }}
                                     >
-                                        {new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString()} {topic.tokenSymbol}
+                                        {new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString()}&nbsp;&nbsp;${topic.tokenSymbol}
                                     </div>
                                 ))}
                         </div>
@@ -317,21 +321,27 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         <div className="flex gap-2 justify-between">
                             <span>Minimum Investment:</span>
                             <span className="">
-                                {formatDecimal(topic.minimumInvestmentAmount)} {topic.tokenSymbol}
+                                {formatDecimal(topic.minimumInvestmentAmount)}
+                                <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && "&nbsp;&nbsp;$" }}></span>
+                                {topic.tokenSymbol}
                             </span>
                         </div>
 
                         <div className="flex gap-2 justify-between">
                             <span>My Investment:</span>
                             <span className="">
-                                {formatDecimal(topic.myInvestment)} {topic.tokenSymbol}
+                                {formatDecimal(topic.myInvestment)}
+                                <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && "&nbsp;&nbsp;$" }}></span>
+                                {topic.tokenSymbol}
                             </span>
                         </div>
 
                         <div className="flex gap-2 justify-between">
                             <span>My Token Balance:</span>
                             <span className="">
-                                {formatDecimal(topic.myTokenBalance)} {topic.tokenSymbol}
+                                {formatDecimal(topic.myTokenBalance)}
+                                <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && "&nbsp;&nbsp;$" }}></span>
+                                {topic.tokenSymbol}
                             </span>
                         </div>
                     </div>
@@ -342,19 +352,19 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         <div className="flex gap-2 justify-between">
                             <span>Withdrawable Amount:</span>
                             <span>
-                                {formatDecimal(topic.myWithdrawableAmount)} {topic.tokenSymbol}
+                                {formatDecimal(topic.myWithdrawableAmount)}&nbsp;&nbsp;${topic.tokenSymbol}
                             </span>
                         </div>
                         <div className="flex gap-2 justify-between">
                             <span>Total Income:</span>
                             <span>
-                                {formatDecimal(topic.myTotalIncome)} {topic.tokenSymbol}
+                                {formatDecimal(topic.myTotalIncome)}&nbsp;&nbsp;${topic.tokenSymbol}
                             </span>
                         </div>
                         <div className="flex gap-2 justify-between">
                             <span>My Token Balance:</span>
                             <span>
-                                {formatDecimal(topic.myTokenBalance)} {topic.tokenSymbol}
+                                {formatDecimal(topic.myTokenBalance)}&nbsp;&nbsp;${topic.tokenSymbol}
                             </span>
                         </div>
                         <div className="flex gap-2 justify-between">
