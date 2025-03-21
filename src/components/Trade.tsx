@@ -265,10 +265,10 @@ export default function Trade({ topic, getContractData }: TradeProps) {
         <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="w-full grid grid-cols-2 bg-gray-100 p-1 h-auto">
-                    <TabsTrigger value="invest" className="h-8 font-medium text-md">
+                    <TabsTrigger value="invest" className="h-8 font-medium text-md data-[state=active]:bg-white">
                         Invest
                     </TabsTrigger>
-                    <TabsTrigger value="withdraw" className="h-8 font-medium text-md">
+                    <TabsTrigger value="withdraw" className="h-8 font-medium text-md data-[state=active]:bg-white">
                         Withdraw
                     </TabsTrigger>
                 </TabsList>
@@ -372,7 +372,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <span className="">0.3%</span>
                         </div>
                     </div>
-                    <div className="pt-4 px-6 flex flex-col items-end justify-end ">
+                    <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions.length > 2 && "pr-10"}`}>
                         <div className="inline-flex items-center rounded-md mb-4 border border-gray-100">
                             <Button
                                 // variant={filter === "all" ? "default" : "ghost"}
@@ -396,7 +396,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             {filter === "all" ? "Showing all investment positions" : "Showing investment positions with withdrawable amount greater than 0"}
                         </p> */}
                     </div>
-                    <div className="grid gap-6 grid-cols-1 max-h-[50.5vh] overflow-auto px-6 pb-6">
+                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions.length > 2 && "overflow-auto"} px-6 pb-6`}>
                         {filteredPositions?.map((item) => (
                             <PositionItem item={item} />
                         ))}
