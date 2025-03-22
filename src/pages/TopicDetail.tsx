@@ -76,7 +76,7 @@ export default function TopicDetail() {
     };
 
     const getMyTokenBalance = async (tokenAddress: Address) => {
-        if (!address) {
+        if (!address || tokenAddress === zeroAddress) {
             return;
         }
         const result = (await readContract(publicClient, {
@@ -161,7 +161,6 @@ export default function TopicDetail() {
     };
 
     const getTokenInfo = async () => {
-        console.log({ contractAddress });
         const tokenAddress = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
