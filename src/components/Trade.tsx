@@ -6,7 +6,7 @@ import { readContract, waitForTransactionReceipt, writeContract } from "viem/act
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import BigNumber from "bignumber.js";
 import { cn, formatDecimal, getWagmiPublicClient, getWagmiWalletClient } from "src/utils";
-import { maxUint256, formatUnits, parseUnits, Address } from "viem";
+import { maxUint256, formatUnits, parseUnits, Address, zeroAddress } from "viem";
 import { useAccount } from "wagmi";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 import { useContractAddress } from "src/hooks/useContractAddress";
@@ -287,7 +287,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             {isPending ? "Investing..." : "Invest"}
                         </Button>
                     </form>
-                    {topic.minimumInvestmentAmount && (
+                    {topic.tokenAddress !== zeroAddress && topic.minimumInvestmentAmount && (
                         <div className="flex gap-3 flex-wrap pt-6">
                             {Array.from({ length: 5 })
                                 .fill(1)
@@ -298,7 +298,9 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                                             setInvestmentAmount(new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString());
                                         }}
                                     >
-                                        {new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString()}&nbsp;&nbsp;${topic.tokenSymbol}
+                                        {new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString()}
+                                        {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                        {topic.tokenSymbol}
                                     </div>
                                 ))}
                         </div>
@@ -352,27 +354,33 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         <div className="flex gap-2 justify-between">
                             <span>Withdrawable Amount:</span>
                             <span>
-                                {formatDecimal(topic.myWithdrawableAmount)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                {formatDecimal(topic.myWithdrawableAmount)}
+                                {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                {topic.tokenSymbol}
                             </span>
                         </div>
                         <div className="flex gap-2 justify-between">
                             <span>Total Income:</span>
                             <span>
-                                {formatDecimal(topic.myTotalIncome)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                {formatDecimal(topic.myTotalIncome)}
+                                {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                {topic.tokenSymbol}
                             </span>
                         </div>
                         <div className="flex gap-2 justify-between">
                             <span>My Token Balance:</span>
                             <span>
-                                {formatDecimal(topic.myTokenBalance)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                {formatDecimal(topic.myTokenBalance)}
+                                {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                {topic.tokenSymbol}
                             </span>
                         </div>
                         <div className="flex gap-2 justify-between">
                             <span>Withdrawal Fee:</span>
-                            <span className="">0.3%</span>
+                            <span className="">{topic.withdrawalFee}</span>
                         </div>
                     </div>
-                    <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions.length > 2 && "pr-10"}`}>
+                    <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions?.length > 2 && "pr-10"}`}>
                         <div className="inline-flex items-center rounded-md mb-4 border border-gray-100">
                             <Button
                                 // variant={filter === "all" ? "default" : "ghost"}
@@ -396,7 +404,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             {filter === "all" ? "Showing all investment positions" : "Showing investment positions with withdrawable amount greater than 0"}
                         </p> */}
                     </div>
-                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions.length > 2 && "overflow-auto"} px-6 pb-6`}>
+                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions?.length > 2 && "overflow-auto"} px-6 pb-6`}>
                         {filteredPositions?.map((item) => (
                             <PositionItem item={item} />
                         ))}
