@@ -230,6 +230,7 @@ export default function TopicDetail() {
             ...(isInitial && tokenInfo),
             withdrawalFee: `${Number(withdrawalFee) / 10}%`,
             minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo.tokenDecimals),
+            currentPosition: Number(currentPosition),
             myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
             myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
             // myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),

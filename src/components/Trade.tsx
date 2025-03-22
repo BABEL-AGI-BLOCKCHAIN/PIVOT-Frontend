@@ -299,7 +299,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                                         }}
                                     >
                                         {new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString()}
-                                        {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                        <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && " $" }}></span>
                                         {topic.tokenSymbol}
                                     </div>
                                 ))}
@@ -355,7 +355,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <span>Withdrawable Amount:</span>
                             <span>
                                 {formatDecimal(topic.myWithdrawableAmount)}
-                                {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && "&nbsp;&nbsp;$" }}></span>
                                 {topic.tokenSymbol}
                             </span>
                         </div>
@@ -363,7 +363,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <span>Total Income:</span>
                             <span>
                                 {formatDecimal(topic.myTotalIncome)}
-                                {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && "&nbsp;&nbsp;$" }}></span>
                                 {topic.tokenSymbol}
                             </span>
                         </div>
@@ -371,7 +371,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <span>My Token Balance:</span>
                             <span>
                                 {formatDecimal(topic.myTokenBalance)}
-                                {topic.tokenSymbol && "&nbsp;&nbsp;$"}
+                                <span dangerouslySetInnerHTML={{ __html: topic.tokenSymbol && "&nbsp;&nbsp;$" }}></span>
                                 {topic.tokenSymbol}
                             </span>
                         </div>
