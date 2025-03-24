@@ -52,7 +52,7 @@ export default function Home() {
 
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4">
-            <div className="grid gap-8 my-6 grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
+            <div className="grid gap-8 my-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
                 {topics.map((topic) => (
                     console.log(topic.id),
                     <TopicCard key={topic.id} {...topic} />

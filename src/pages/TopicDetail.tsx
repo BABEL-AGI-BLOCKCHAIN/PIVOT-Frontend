@@ -119,8 +119,13 @@ export default function TopicDetail() {
     };
 
     const getMyPositions = async () => {
-        const positions = [1, 2, 3, 4];
-        return positions;
+        try {
+            const positions = (await axios.post(ENDPOINTS.GET_POSITIONS(id), { topicId: id, investor: address })).data.positions;
+            console.log("positions", positions);
+            return positions;
+        } catch (error) {
+            console.error("Error fetching positions:", error);
+        }
     };
 
     const getMyPositionsStats = async (positions: number[], fixedInvestment: bigint, currentPosition: bigint, withdrawalFee: bigint) => {
