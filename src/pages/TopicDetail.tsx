@@ -9,11 +9,12 @@ import { useChainId } from "src/hooks/useChainId";
 import { useContractAddress } from "src/hooks/useContractAddress";
 import { usePreProcessing } from "src/hooks/usePreProcessing";
 import { getWagmiPublicClient } from "src/utils";
-import { Address, formatUnits } from "viem";
+import { Address, formatUnits, zeroAddress } from "viem";
 import { readContract } from "viem/actions";
 import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
+
 export interface TopicDetail {
     id: string;
     title: string;
@@ -23,8 +24,16 @@ export interface TopicDetail {
     totalInvestment: number;
     minimumInvestmentAmount: string;
     currentPosition: number;
+    withdrawalFee: string;
     myInvestment: string;
-    myIncome: string;
+    myWithdrawableAmount: string;
+    myTotalIncome: string;
+    myPositionsStats: {
+        withdrawableAmount: string;
+        totalIncome: string;
+        position: number;
+        investmentDate: string;
+    }[];
     commentsCount: number;
     publishTime: string;
     tokenName: string;
@@ -69,7 +78,7 @@ export default function TopicDetail() {
     };
 
     const getMyTokenBalance = async (tokenAddress: Address) => {
-        if (!address) {
+        if (!address || tokenAddress === zeroAddress) {
             return;
         }
         const result = (await readContract(publicClient, {
@@ -81,28 +90,88 @@ export default function TopicDetail() {
         return result;
     };
 
-    const getMyIncome = async (address: Address, topicId: string) => {
+    const getMyPositionWithdrawnAmount = async (position: number) => {
         if (!address) {
             return;
         }
         const result = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
-            functionName: "getIncome",
-            args: [address, topicId],
+            functionName: "_positionReceivedIncome",
+            args: [address, id!, position],
         })) as bigint;
+        console.log({ result });
         return result;
     };
 
+    const getMyWithdrawnAmount = async () => {
+        if (!address) {
+            return;
+        }
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_receivedIncome",
+            args: [address, id!],
+        })) as bigint;
+        console.log({ result });
+        return result;
+    };
+
+    const getMyPositions = async () => {
+        const positions = [1, 2, 3, 4];
+        return positions;
+    };
+
+    const getMyPositionsStats = async (positions: number[], fixedInvestment: bigint, currentPosition: bigint, withdrawalFee: bigint) => {
+        const res = await Promise.allSettled(
+            positions.map(async (item) => {
+                const positionTotalIncome = getMyPositionIncome(fixedInvestment, item, currentPosition);
+                const withdrawnAmount = await getMyPositionWithdrawnAmount(item);
+                const withdrawFee = positionTotalIncome > fixedInvestment ? ((positionTotalIncome - fixedInvestment) * withdrawalFee) / BigInt(1000) : BigInt(0);
+                return {
+                    position: item,
+                    investmentDate: "2024-01-13 10:00",
+                    totalIncome: positionTotalIncome - withdrawFee,
+                    withdrawableAmount: positionTotalIncome - withdrawnAmount! - withdrawFee,
+                };
+            })
+        );
+
+        return res.filter((item) => item.status === "fulfilled").map((item) => item.value);
+    };
+
+    const getMyTotalIncome = (myPositions: number[], fixedInvestment: bigint, currentPosition: bigint) => {
+        const totalIncome = myPositions.reduce((acc, item) => {
+            return acc + getMyPositionIncome(fixedInvestment, item, currentPosition);
+        }, BigInt(0));
+
+        return totalIncome;
+    };
+
+    const getMyPositionIncome = (fixedInvestment: bigint, position: number, currentPosition: bigint) => {
+        let sum = BigInt(0);
+        let _fixedInvestment = fixedInvestment;
+        let _position = Number(position);
+        let _currentPosition = Number(currentPosition);
+
+        for (let i = _position; i <= _currentPosition; i++) {
+            sum = sum += _fixedInvestment / BigInt(i);
+        }
+
+        return sum;
+    };
+
     const getTokenInfo = async () => {
-        console.log({ contractAddress });
         const tokenAddress = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
             functionName: "topicCoin",
             args: [id],
         })) as Address;
-
+        if (tokenAddress === zeroAddress) {
+            return { tokenAddress, tokenSymbol: "", tokenDecimals: 18 };
+        }
         const tokenSymbol = (await readContract(publicClient, {
             abi: ERC20ABI,
             address: tokenAddress,
@@ -127,20 +196,63 @@ export default function TopicDetail() {
         return result;
     };
 
+    const getCurrentPosition = async () => {
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_position",
+            args: [id],
+        })) as bigint;
+        return result;
+    };
+
+    const getWithdrawalFee = async () => {
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_commissionrate",
+            args: [],
+        })) as bigint;
+        return result;
+    };
+
     const getContractData = async (topic: TopicDetail, isInitial?: boolean) => {
         const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic.tokenAddress, tokenSymbol: topic.tokenSymbol, tokenDecimals: topic.tokenDecimals };
-        const minimumInvestmentAmount = isInitial && (await getMinimumInvestmentAmount());
+        const minimumInvestmentAmount = await getMinimumInvestmentAmount();
+        const currentPosition = await getCurrentPosition();
+        const withdrawalFee = await getWithdrawalFee();
         const myTokenBalance = await getMyTokenBalance(topic.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
         const myInvestment = await getMyInvestment();
-        const myIncome = await getMyIncome(address as Address, id!);
-
+        // const myWithdrawnAmount = await getMyWithdrawnAmount();
+        const myPositions = await getMyPositions();
+        const myPositionsStats = await getMyPositionsStats(myPositions, minimumInvestmentAmount, currentPosition, withdrawalFee);
+        // const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
         setTopic({
             ...topic,
             ...(isInitial && tokenInfo),
-            ...(isInitial && { minimumInvestmentAmount: formatUnits((minimumInvestmentAmount as bigint) ?? BigInt(0), tokenInfo.tokenDecimals) }),
+            withdrawalFee: `${Number(withdrawalFee) / 10}%`,
+            minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo.tokenDecimals),
+            currentPosition: Number(currentPosition),
             myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
             myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
-            myIncome: formatUnits(myIncome ?? BigInt(0), tokenInfo.tokenDecimals),
+            // myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),
+            myPositionsStats: myPositionsStats.map((item) => ({
+                ...item,
+                withdrawableAmount: formatUnits(item.withdrawableAmount, tokenInfo.tokenDecimals),
+                totalIncome: formatUnits(item.totalIncome, tokenInfo.tokenDecimals),
+            })),
+            myWithdrawableAmount: formatUnits(
+                myPositionsStats.reduce((acc, item) => {
+                    return acc + item.withdrawableAmount;
+                }, BigInt(0)),
+                tokenInfo.tokenDecimals
+            ),
+            myTotalIncome: formatUnits(
+                myPositionsStats.reduce((acc, item) => {
+                    return acc + item.totalIncome;
+                }, BigInt(0)),
+                tokenInfo.tokenDecimals
+            ),
         });
     };
 
@@ -153,7 +265,7 @@ export default function TopicDetail() {
                 setTopic(topicData);
                 getContractData(topicData, true);
             } catch (error) {
-                console.error('Error fetching topic:', error);
+                console.error("Error fetching topic:", error);
             }
         };
 

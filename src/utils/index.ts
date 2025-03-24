@@ -18,7 +18,7 @@ export async function getWagmiWalletClient() {
     return await getWalletClient(config);
 }
 
-export function formatDecimal(value: Decimal.Value, decimalPlaces = 2, roundingMode = Decimal.ROUND_DOWN) {
+export function formatDecimal(value: Decimal.Value, decimalPlaces = 4, roundingMode = Decimal.ROUND_DOWN) {
     if (!value) {
         return "0";
     }
