@@ -207,7 +207,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
             <Card key={item.position} className="overflow-hidden">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-xl">Position #{item.position}</CardTitle>
-                    <CardDescription>Invested on {new Date(item.investmentDate).toLocaleDateString()}</CardDescription>
+                    <CardDescription>Invested on {new Date(item.investmentDate).toLocaleString()}</CardDescription>
                 </CardHeader>
                 <CardContent className="py-2">
                     <div className="space-y-4">
@@ -380,31 +380,33 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <span className="">{topic.withdrawalFee}</span>
                         </div>
                     </div>
-                    <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions?.length > 2 && "pr-10"}`}>
-                        <div className="inline-flex items-center rounded-md mb-4 border border-gray-100">
-                            <Button
-                                // variant={filter === "all" ? "default" : "ghost"}
-                                size="sm"
-                                onClick={() => setFilter("all")}
-                                className={`rounded-r-none rounded-l-md font-bold hover:bg-[#efefef] text-sm w-24 ${filter === "all" ? "!bg-green-600 !text-white" : ""}`}
-                            >
-                                All
-                            </Button>
+                    {Number(topic.myInvestment) > 0 && (
+                        <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions?.length > 0 && "pr-10"}`}>
+                            <div className="inline-flex items-center rounded-md mb-4 border border-gray-100">
+                                <Button
+                                    // variant={filter === "all" ? "default" : "ghost"}
+                                    size="sm"
+                                    onClick={() => setFilter("all")}
+                                    className={`rounded-r-none rounded-l-md font-bold hover:bg-[#efefef] text-sm w-24 ${filter === "all" ? "!bg-green-600 !text-white" : ""}`}
+                                >
+                                    All
+                                </Button>
 
-                            <Button
-                                // variant={filter === "withdrawable" ? "default" : "ghost"}
-                                size="sm"
-                                onClick={() => setFilter("withdrawable")}
-                                className={`rounded-l-none rounded-r-md font-bold hover:bg-[#efefef] text-sm ${filter === "withdrawable" ? "!bg-green-600 !text-white" : ""}`}
-                            >
-                                Withdrawable
-                            </Button>
-                        </div>
-                        {/* <p className="text-sm text-muted-foreground">
+                                <Button
+                                    // variant={filter === "withdrawable" ? "default" : "ghost"}
+                                    size="sm"
+                                    onClick={() => setFilter("withdrawable")}
+                                    className={`rounded-l-none rounded-r-md font-bold hover:bg-[#efefef] text-sm ${filter === "withdrawable" ? "!bg-green-600 !text-white" : ""}`}
+                                >
+                                    Withdrawable
+                                </Button>
+                            </div>
+                            {/* <p className="text-sm text-muted-foreground">
                             {filter === "all" ? "Showing all investment positions" : "Showing investment positions with withdrawable amount greater than 0"}
                         </p> */}
-                    </div>
-                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions?.length > 2 && "overflow-auto"} px-6 pb-6`}>
+                        </div>
+                    )}
+                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions?.length > 0 && "overflow-auto"} px-6 pb-6`}>
                         {filteredPositions?.map((item) => (
                             <PositionItem item={item} />
                         ))}

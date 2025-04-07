@@ -135,20 +135,21 @@ export default function TopicDetail() {
         }
     };
 
-    const getMyPositionsStats = async (positions: number[], fixedInvestment: bigint, currentPosition: bigint, withdrawalFee: bigint) => {
+    const getMyPositionsStats = async (positions: { position: number; blockTimeStamp: string }[], fixedInvestment: bigint, currentPosition: bigint, withdrawalFee: bigint) => {
         const res = await Promise.allSettled(
             positions.map(async (item) => {
-                const positionTotalIncome = getMyPositionIncome(fixedInvestment, item, currentPosition);
-                const withdrawnAmount = await getMyPositionWithdrawnAmount(item);
+                const positionTotalIncome = getMyPositionIncome(fixedInvestment, item.position, currentPosition);
+                const withdrawnAmount = await getMyPositionWithdrawnAmount(item.position);
                 const withdrawFee = positionTotalIncome > fixedInvestment ? ((positionTotalIncome - fixedInvestment) * BigInt(withdrawalFee)) / BigInt(1000) : BigInt(0);
                 return {
-                    position: item,
-                    investmentDate: "2024-01-13 10:00",
+                    position: item.position,
+                    investmentDate: item.blockTimeStamp,
                     totalIncome: positionTotalIncome - withdrawFee,
                     withdrawableAmount: positionTotalIncome - withdrawnAmount! - withdrawFee,
                 };
             })
         );
+
         return res.filter((item) => item.status === "fulfilled").map((item) => item.value);
     };
 
