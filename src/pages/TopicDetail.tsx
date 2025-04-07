@@ -120,7 +120,14 @@ export default function TopicDetail() {
 
     const getMyPositions = async () => {
         try {
-            const positions = (await axios.post(ENDPOINTS.GET_POSITIONS(id), { topicId: id, investor: address })).data.positions;
+            const positions = (
+                await axios.get(ENDPOINTS.GET_POSITIONS(id), {
+                    params: {
+                        id,
+                        investor: address,
+                    },
+                })
+            ).data.positions;
             console.log("positions", positions);
             return positions;
         } catch (error) {
@@ -133,7 +140,7 @@ export default function TopicDetail() {
             positions.map(async (item) => {
                 const positionTotalIncome = getMyPositionIncome(fixedInvestment, item, currentPosition);
                 const withdrawnAmount = await getMyPositionWithdrawnAmount(item);
-                const withdrawFee = positionTotalIncome > fixedInvestment ? ((positionTotalIncome - fixedInvestment) * withdrawalFee) / BigInt(1000) : BigInt(0);
+                const withdrawFee = positionTotalIncome > fixedInvestment ? ((positionTotalIncome - fixedInvestment) * BigInt(withdrawalFee)) / BigInt(1000) : BigInt(0);
                 return {
                     position: item,
                     investmentDate: "2024-01-13 10:00",
@@ -142,7 +149,6 @@ export default function TopicDetail() {
                 };
             })
         );
-
         return res.filter((item) => item.status === "fulfilled").map((item) => item.value);
     };
 
@@ -232,7 +238,7 @@ export default function TopicDetail() {
         const myPositions = await getMyPositions();
         const myPositionsStats = await getMyPositionsStats(myPositions, minimumInvestmentAmount, currentPosition, withdrawalFee);
         // const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
-        setTopic({
+        const contractData = {
             ...topic,
             ...(isInitial && tokenInfo),
             withdrawalFee: `${Number(withdrawalFee) / 10}%`,
@@ -258,17 +264,27 @@ export default function TopicDetail() {
                 }, BigInt(0)),
                 tokenInfo.tokenDecimals
             ),
-        });
+        };
+
+        setTopic(contractData);
+        return contractData;
     };
 
     useEffect(() => {
         const fetchTopic = async () => {
             try {
-                const response = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id));
+                const response: any = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id));
                 console.log("response", response);
-                const topicData = response.data.topic;
-                setTopic(topicData);
-                getContractData(topicData, true);
+                const topicData: any = response.data.topic;
+                const contractData = await getContractData(topicData, true);
+                console.log({ contractData });
+                setTopic({
+                    ...contractData,
+                    ...topicData,
+                    author: topicData.createTopic.promoterId,
+                    publishTime: new Date(topicData.blockTimeStamp).toLocaleString(),
+                    totalInvestment: formatUnits(topicData.totalInvestment, contractData.tokenDecimals),
+                });
             } catch (error) {
                 console.error("Error fetching topic:", error);
             }

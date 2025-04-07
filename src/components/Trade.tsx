@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 interface TradeProps {
     topic: TopicDetail;
-    getContractData: (topic: TopicDetail, isInitial?: boolean) => Promise<void>;
+    getContractData: (topic: TopicDetail, isInitial?: boolean) => Promise<any>;
 }
 
 export default function Trade({ topic, getContractData }: TradeProps) {
