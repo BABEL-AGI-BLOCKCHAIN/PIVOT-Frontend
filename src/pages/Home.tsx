@@ -1,23 +1,33 @@
-import axios from 'axios';
+import axios from "axios";
 import { useEffect, useState } from "react";
-import { ENDPOINTS } from '../config';
+import { ENDPOINTS } from "../config";
 import TopicCard from "../components/TopicCard";
 
-interface Topic {
+export interface Topic {
     id: string;
-    title: string;
-    content: string;
     creator: string;
     image: string;
+    createTopic: {
+        investment: string;
+        promoterId: string;
+        tokenAddress: string;
+    };
+    metadata: {
+        mediaCID: string;
+        topicContent: string;
+        topicHash: string;
+        topicId: string;
+        topicTitle: string;
+    };
     totalInvestment: number;
     investmentAmount: number;
+    investorCount: number;
     currentPosition: number;
-    commentsCount: number;
-    publishTime: string;
-    tokenSymbol: string;
+    commentCount: number;
+    blockTimeStamp: string;
 }
 
-const fetchTopics = async (page = 1, limit = 10, sortField = 'blockTimeStamp', sortOrder = 'desc') => {
+const fetchTopics = async (page = 1, limit = 10, sortField = "blockTimeStamp", sortOrder = "desc") => {
     try {
         const response = await axios.get(ENDPOINTS.GET_TOPICS, {
             params: {
@@ -29,7 +39,7 @@ const fetchTopics = async (page = 1, limit = 10, sortField = 'blockTimeStamp', s
         });
         return response.data;
     } catch (error) {
-        console.error('Error fetching topics:', error);
+        console.error("Error fetching topics:", error);
         return { topics: [], pagination: { totalTopics: 0, currentPage: 1, totalPages: 1 } };
     }
 };
@@ -49,28 +59,14 @@ export default function Home() {
         loadTopics();
     }, [page]);
 
-
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4">
-            <div className="grid gap-8 my-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
-                {topics.map((topic) => (
-                    console.log(topic.id),
-                    <TopicCard key={topic.id} {...topic} />
-                ))}
-            </div>
+            <div className="grid gap-8 my-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">{topics.map((topic) => (console.log(topic.id), (<TopicCard key={topic.id} {...topic} />)))}</div>
             <div className="flex justify-center mt-6">
-                <button
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 mx-2 bg-gray-300 rounded-md"
-                >
+                <button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1} className="px-4 py-2 mx-2 bg-gray-300 rounded-md">
                     Previous
                 </button>
-                <button
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={page === totalPages}
-                    className="px-4 py-2 mx-2 bg-gray-300 rounded-md"
-                >
+                <button onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} disabled={page === totalPages} className="px-4 py-2 mx-2 bg-gray-300 rounded-md">
                     Next
                 </button>
             </div>

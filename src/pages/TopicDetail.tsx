@@ -14,6 +14,8 @@ import { readContract } from "viem/actions";
 import { useAccount } from "wagmi";
 import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
+import { readContracts } from "@wagmi/core";
+import { config } from "src/wagmi";
 
 export interface TopicDetail {
     id: string;
@@ -184,18 +186,28 @@ export default function TopicDetail() {
         if (tokenAddress === zeroAddress) {
             return { tokenAddress, tokenSymbol: "", tokenDecimals: 18 };
         }
-        const tokenSymbol = (await readContract(publicClient, {
-            abi: ERC20ABI,
-            address: tokenAddress,
-            functionName: "symbol",
-        })) as string;
+        // const tokenSymbol = (await readContract(publicClient, {
+        //     abi: ERC20ABI,
+        //     address: tokenAddress,
+        //     functionName: "symbol",
+        // })) as string;
 
-        const tokenDecimals = (await readContract(publicClient, {
-            abi: ERC20ABI,
-            address: tokenAddress,
-            functionName: "decimals",
-        })) as number;
-        return { tokenAddress, tokenSymbol, tokenDecimals };
+        const res = await readContracts(config, {
+            contracts: [
+                {
+                    abi: ERC20ABI as any[],
+                    address: tokenAddress,
+                    functionName: "symbol",
+                },
+                {
+                    abi: ERC20ABI,
+                    address: tokenAddress,
+                    functionName: "decimals",
+                },
+            ],
+        });
+
+        return { tokenAddress, tokenSymbol: (res[0].result as string) ?? "", tokenDecimals: (res[1].result as number) ?? 18 };
     };
 
     const getMinimumInvestmentAmount = async () => {
