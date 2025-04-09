@@ -16,16 +16,11 @@ import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
 import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 import { readContracts } from "@wagmi/core";
 import { config } from "src/wagmi";
+import { Topic } from "./Home";
 
-export interface TopicDetail {
+export interface TopicDetail extends Topic {
     id: string;
-    title: string;
-    content: string;
-    author: string;
-    image: string;
-    totalInvestment: number;
     minimumInvestmentAmount: string;
-    currentPosition: number;
     withdrawalFee: string;
     myInvestment: string;
     myWithdrawableAmount: string;
@@ -36,15 +31,10 @@ export interface TopicDetail {
         position: number;
         investmentDate: string;
     }[];
-    commentsCount: number;
-    publishTime: string;
-    tokenName: string;
-    tokenLogo: string;
+    myTokenBalance: string;
     tokenAddress: Address;
     tokenSymbol: string;
     tokenDecimals: number;
-    myTokenBalance: string;
-    comments: Comment[];
 }
 
 export default function TopicDetail() {
@@ -294,8 +284,8 @@ export default function TopicDetail() {
                 setTopic({
                     ...contractData,
                     ...topicData,
-                    author: topicData.createTopic.promoterId,
-                    publishTime: new Date(topicData.blockTimeStamp).toLocaleString(),
+                    creator: topicData.createTopic.promoterId,
+                    blockTimeStamp: new Date(topicData.blockTimeStamp).toLocaleString(),
                     totalInvestment: formatUnits(topicData.totalInvestment, contractData.tokenDecimals),
                 });
             } catch (error) {
@@ -316,28 +306,24 @@ export default function TopicDetail() {
     if (!topic) {
         return <div className="loading">Loading...</div>;
     }
-
+    console.log({ topic });
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4 pb-8">
-            <div className="mb-8">
-                {/* <h1 className="text-2xl font-bold mb-4">{topic.title}</h1> */}
-                {/* <div className="flex gap-4 text-gray-600 text-sm">
-                    <span className="font-medium">Author: {topic.author}</span>
-                    <span>Published: {topic.publishTime}</span>
-                    <span>Total Investment: {topic.totalInvestment}</span>
-                    <span>Current Position: {topic.currentPosition}</span>
-                </div> */}
-            </div>
             <div className="flex gap-6 ">
                 <div className="flex-1">
                     <div>
                         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                            <h1 className="text-2xl font-bold mb-4">{topic.title}</h1>
+                            <h1 className="text-2xl font-bold mb-4">{topic.metadata?.topicTitle}</h1>
                             <div className="mb-8 leading-relaxed">
-                                <p>{topic.content}</p>
+                                <p>{topic.metadata?.topicContent}</p>
                             </div>
                             <div className="mb-8">
-                                <img src={topic.image} alt={topic.title} className="max-h-64 object-cover rounded-lg" />
+                                {/* <img src={topic.image} className="max-h-64 object-cover rounded-lg" /> */}
+                                {topic.metadata?.mediaCID && (
+                                    <div className="w-full h-52 overflow-hidden">
+                                        <img src={topic.metadata?.mediaCID ? `${process.env.REACT_APP_IPFS_GATEWAY}${topic.metadata.mediaCID}` : ""} className="w-full h-full object-cover" />
+                                    </div>
+                                )}
                             </div>
                             <CommentComponent topic={topic} />
                         </div>

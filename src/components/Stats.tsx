@@ -1,6 +1,4 @@
-import { hash } from "crypto";
 import { ArrowUpRight } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useContractAddress } from "src/hooks/useContractAddress";
 import { TopicDetail } from "src/pages/TopicDetail";
@@ -14,8 +12,9 @@ export default function Stats({ topic }: StatsProps) {
     const ca = useContractAddress();
     const statsList = [
         { title: "PIVOT CA", value: ca, isLink: true, isAddress: true },
-        { title: "Creator", value: topic.author, isLink: true, isAddress: true },
-        { title: "Release Time", value: topic.publishTime },
+        { title: "ERC-20 Token CA", value: topic.tokenAddress, isLink: true, isAddress: true },
+        { title: "Creator", value: topic.creator, isLink: true, isAddress: true },
+        { title: "Release Time", value: topic.blockTimeStamp },
         { title: "Current Position", value: topic.currentPosition },
         { title: "Total Investment", value: `${topic.totalInvestment}${topic.tokenSymbol ? "&nbsp;&nbsp;$" : ""}${topic.tokenSymbol ?? ""}` },
     ];

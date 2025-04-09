@@ -88,10 +88,10 @@ export default function CreateTopic() {
 
         try {
             // const fd: any = new FormData();
-            // fd.append("topicId", '9');
+            // fd.append("topicId", "8");
             // fd.append("topicTitle", formData.title);
             // fd.append("topicContent", formData.content);
-            // fd.append("topicHash", '0x');
+            // fd.append("topicHash", "0x");
             // fd.append("image", formData.resourceFile);
 
             // await axios.post(ENDPOINTS.UPDATE_TOPIC, fd, {
@@ -99,6 +99,9 @@ export default function CreateTopic() {
             //         "Content-Type": "multipart/form-data",
             //     },
             // });
+            
+            // setIsPending(false);
+
             // return;
             const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
             await preProcessing();
