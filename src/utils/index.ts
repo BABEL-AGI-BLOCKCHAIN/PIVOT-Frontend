@@ -25,7 +25,7 @@ export function formatDecimal(value: Decimal.Value, decimalPlaces = 4, roundingM
     return new Decimal(value).toDecimalPlaces(decimalPlaces, roundingMode).toString();
 }
 
-export function truncateAddress(address: string): string {
+export function truncateAddress(address?: string): string {
     if (!address) return "";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

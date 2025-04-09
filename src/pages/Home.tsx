@@ -62,11 +62,12 @@ export default function Home() {
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4">
             <div className="grid gap-8 my-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">{topics.map((topic) => (console.log(topic.id), (<TopicCard key={topic.id} {...topic} />)))}</div>
-            <div className="flex justify-center mt-6">
-                <button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1} className="px-4 py-2 mx-2 bg-gray-300 rounded-md">
+            <div className="flex justify-center items-center mt-6 gap-6">
+                <button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1} className="px-4 py-2 mx-2 bg-gray-300 rounded-md w-24">
                     Previous
                 </button>
-                <button onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} disabled={page === totalPages} className="px-4 py-2 mx-2 bg-gray-300 rounded-md">
+                {page}
+                <button onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} disabled={page === totalPages} className="px-4 py-2 mx-2 bg-gray-300 rounded-md w-24">
                     Next
                 </button>
             </div>

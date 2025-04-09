@@ -88,7 +88,7 @@ export default function CreateTopic() {
 
         try {
             // const fd: any = new FormData();
-            // fd.append("topicId", "8");
+            // fd.append("topicId", "10");
             // fd.append("topicTitle", formData.title);
             // fd.append("topicContent", formData.content);
             // fd.append("topicHash", "0x");
@@ -97,9 +97,11 @@ export default function CreateTopic() {
             // await axios.post(ENDPOINTS.UPDATE_TOPIC, fd, {
             //     headers: {
             //         "Content-Type": "multipart/form-data",
+            //         Authorization: localStorage.getItem("access_token"),
+            //
             //     },
             // });
-            
+
             // setIsPending(false);
 
             // return;
@@ -136,9 +138,9 @@ export default function CreateTopic() {
                 functionName: "allowance",
                 args: [address, contractAddress],
             })) as bigint;
-            console.log({ result });
+            // console.log({ result });
 
-            console.log(investmentAmount, formatUnits(result, tokenDecimals));
+            // console.log(investmentAmount, formatUnits(result, tokenDecimals));
 
             const walletClient = await getWagmiWalletClient();
 
@@ -185,6 +187,7 @@ export default function CreateTopic() {
                 await axios.post(ENDPOINTS.UPDATE_TOPIC, fd, {
                     headers: {
                         "Content-Type": "multipart/form-data",
+                        Authorization: localStorage.getItem("access_token"),
                     },
                 });
             }

@@ -20,8 +20,8 @@ import Decimal from "decimal.js";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 
 interface TradeProps {
-    topic: TopicDetail;
-    getContractData: (topic: TopicDetail, isInitial?: boolean) => Promise<any>;
+    topic?: TopicDetail;
+    getContractData: (topic?: TopicDetail, isInitial?: boolean) => Promise<any>;
 }
 
 export default function Trade({ topic, getContractData }: TradeProps) {
@@ -33,7 +33,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
     const [filter, setFilter] = useState<"all" | "withdrawable">("all");
-    const filteredPositions = filter === "all" ? topic.myPositionsStats : topic.myPositionsStats?.filter((position) => new BigNumber(position.withdrawableAmount).gt(0));
+    const filteredPositions = filter === "all" ? topic?.myPositionsStats : topic?.myPositionsStats?.filter((position) => new BigNumber(position.withdrawableAmount).gt(0));
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
     const preProcessing = usePreProcessing();
 
@@ -216,7 +216,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <div className="space-y-0.5">
                                 <p className="text-sm font-medium text-muted-foreground">Withdrawable Amount</p>
                                 <p className="text-lg font-semibold">
-                                    {formatDecimal(item.withdrawableAmount)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                    {formatDecimal(item.withdrawableAmount)}&nbsp;&nbsp;${topic?.tokenSymbol}
                                 </p>
                             </div>
                         </div>
@@ -225,7 +225,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             <div className="space-y-0.5">
                                 <p className="text-sm font-medium text-muted-foreground">Total Income</p>
                                 <p className="text-lg font-semibold text-green-600">
-                                    {formatDecimal(item.totalIncome)}&nbsp;&nbsp;${topic.tokenSymbol}
+                                    {formatDecimal(item.totalIncome)}&nbsp;&nbsp;${topic?.tokenSymbol}
                                 </p>
                             </div>
                         </div>
@@ -236,7 +236,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                     <form onSubmit={(e) => handleWithdraw(e, item.position)} className="w-full">
                         <Button
                             type="submit"
-                            disabled={!topic.tokenAddress || isWithdrawalPending || new BigNumber(item.withdrawableAmount).isEqualTo(0)}
+                            disabled={!topic?.tokenAddress || isWithdrawalPending || new BigNumber(item.withdrawableAmount).isEqualTo(0)}
                             className="bg-green-600 hover:bg-green-700 text-white w-full font-bold"
                         >
                             {isWithdrawalPending ? "Withdrawing..." : "Withdraw"}
@@ -381,7 +381,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         </div>
                     </div>
                     {Number(topic.myInvestment) > 0 && (
-                        <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions?.length > 0 && "pr-10"}`}>
+                        <div className={`pt-4 px-6 flex flex-col items-end justify-end ${filteredPositions && filteredPositions?.length > 0 && "pr-10"}`}>
                             <div className="inline-flex items-center rounded-md mb-4 border border-gray-100">
                                 <Button
                                     // variant={filter === "all" ? "default" : "ghost"}
@@ -406,7 +406,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         </p> */}
                         </div>
                     )}
-                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions?.length > 0 && "overflow-auto"} px-6 pb-6`}>
+                    <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions && filteredPositions?.length > 0 && "overflow-auto"} px-6 pb-6`}>
                         {filteredPositions?.map((item) => (
                             <PositionItem item={item} />
                         ))}

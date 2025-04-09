@@ -17,6 +17,7 @@ import ERC20ABI from "../contracts/TopicERC20_ABI.json";
 import { readContracts } from "@wagmi/core";
 import { config } from "src/wagmi";
 import { Topic } from "./Home";
+import { LoaderCircle } from "lucide-react";
 
 export interface TopicDetail extends Topic {
     id: string;
@@ -92,7 +93,7 @@ export default function TopicDetail() {
             functionName: "_positionReceivedIncome",
             args: [address, id!, position],
         })) as bigint;
-        console.log({ result });
+        // console.log({ result });
         return result;
     };
 
@@ -106,7 +107,7 @@ export default function TopicDetail() {
             functionName: "_receivedIncome",
             args: [address, id!],
         })) as bigint;
-        console.log({ result });
+        // console.log({ result });
         return result;
     };
 
@@ -120,7 +121,7 @@ export default function TopicDetail() {
                     },
                 })
             ).data.positions;
-            console.log("positions", positions);
+
             return positions;
         } catch (error) {
             console.error("Error fetching positions:", error);
@@ -230,12 +231,12 @@ export default function TopicDetail() {
         return result;
     };
 
-    const getContractData = async (topic: TopicDetail, isInitial?: boolean) => {
-        const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic.tokenAddress, tokenSymbol: topic.tokenSymbol, tokenDecimals: topic.tokenDecimals };
+    const getContractData = async (topic?: TopicDetail, isInitial?: boolean) => {
+        const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic?.tokenAddress, tokenSymbol: topic?.tokenSymbol, tokenDecimals: topic?.tokenDecimals };
         const minimumInvestmentAmount = await getMinimumInvestmentAmount();
         const currentPosition = await getCurrentPosition();
         const withdrawalFee = await getWithdrawalFee();
-        const myTokenBalance = await getMyTokenBalance(topic.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
+        const myTokenBalance = await getMyTokenBalance(topic?.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
         const myInvestment = await getMyInvestment();
         // const myWithdrawnAmount = await getMyWithdrawnAmount();
         const myPositions = await getMyPositions();
@@ -245,31 +246,31 @@ export default function TopicDetail() {
             ...topic,
             ...(isInitial && tokenInfo),
             withdrawalFee: `${Number(withdrawalFee) / 10}%`,
-            minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo.tokenDecimals),
+            minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
             currentPosition: Number(currentPosition),
-            myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
-            myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
+            myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
+            myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
             // myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),
             myPositionsStats: myPositionsStats.map((item) => ({
                 ...item,
-                withdrawableAmount: formatUnits(item.withdrawableAmount, tokenInfo.tokenDecimals),
-                totalIncome: formatUnits(item.totalIncome, tokenInfo.tokenDecimals),
+                withdrawableAmount: formatUnits(item.withdrawableAmount, tokenInfo?.tokenDecimals ?? 18),
+                totalIncome: formatUnits(item.totalIncome, tokenInfo?.tokenDecimals ?? 18),
             })),
             myWithdrawableAmount: formatUnits(
                 myPositionsStats.reduce((acc, item) => {
                     return acc + item.withdrawableAmount;
                 }, BigInt(0)),
-                tokenInfo.tokenDecimals
+                tokenInfo?.tokenDecimals ?? 18
             ),
             myTotalIncome: formatUnits(
                 myPositionsStats.reduce((acc, item) => {
                     return acc + item.totalIncome;
                 }, BigInt(0)),
-                tokenInfo.tokenDecimals
+                tokenInfo?.tokenDecimals ?? 18
             ),
         };
 
-        setTopic(contractData);
+        setTopic(contractData as TopicDetail);
         return contractData;
     };
 
@@ -286,7 +287,7 @@ export default function TopicDetail() {
                     ...topicData,
                     creator: topicData.createTopic.promoterId,
                     blockTimeStamp: new Date(topicData.blockTimeStamp).toLocaleString(),
-                    totalInvestment: formatUnits(topicData.totalInvestment, contractData.tokenDecimals),
+                    totalInvestment: formatUnits(topicData.totalInvestment, contractData?.tokenDecimals ?? 18),
                 });
             } catch (error) {
                 console.error("Error fetching topic:", error);
@@ -304,22 +305,29 @@ export default function TopicDetail() {
     }, [address]);
 
     if (!topic) {
-        return <div className="loading">Loading...</div>;
+        return (
+            <div className="fixed inset-0 text-black size-full flex justify-center items-center">
+                <div className="flex flex-col justify-center items-center gap-2">
+                    <LoaderCircle className="text-[#0e76fd] size-16 animate-spin" />
+                    <div className="font-bold">Loading...</div>
+                </div>
+            </div>
+        );
     }
-    console.log({ topic });
+
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4 pb-8">
             <div className="flex gap-6 ">
                 <div className="flex-1">
                     <div>
                         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                            <h1 className="text-2xl font-bold mb-4">{topic.metadata?.topicTitle}</h1>
+                            <h1 className="text-2xl font-bold mb-4">{topic?.metadata?.topicTitle}</h1>
                             <div className="mb-8 leading-relaxed">
-                                <p>{topic.metadata?.topicContent}</p>
+                                <p>{topic?.metadata?.topicContent}</p>
                             </div>
                             <div className="mb-8">
                                 {/* <img src={topic.image} className="max-h-64 object-cover rounded-lg" /> */}
-                                {topic.metadata?.mediaCID && (
+                                {topic?.metadata?.mediaCID && (
                                     <div className="w-full h-52 overflow-hidden">
                                         <img src={topic.metadata?.mediaCID ? `${process.env.REACT_APP_IPFS_GATEWAY}${topic.metadata.mediaCID}` : ""} className="w-full h-full object-cover" />
                                     </div>

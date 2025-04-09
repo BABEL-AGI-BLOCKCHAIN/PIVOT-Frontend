@@ -2,16 +2,26 @@ import { useState, useEffect } from "react";
 import { TopicDetail } from "src/pages/TopicDetail";
 import axios from "axios";
 import { ENDPOINTS } from "../config";
+import { truncateAddress } from "src/utils";
+import { Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 
 export interface Comment {
-    id: string;
-    author: string;
+    id: number;
     content: string;
-    timestamp: string;
+    createdAt: string;
+    updatedAt: string;
+    authorId: string;
+    topicId: string;
+    author: {
+        walletAddress: string;
+        createdAt: string;
+        updatedAt: string;
+    };
 }
 
 interface CommentProps {
-    topic: TopicDetail;
+    topic?: TopicDetail;
 }
 
 const fetchComments = async (topicId: string, page = 1, limit = 10) => {
@@ -21,7 +31,7 @@ const fetchComments = async (topicId: string, page = 1, limit = 10) => {
         });
         return response.data;
     } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error("Error fetching comments:", error);
         return { comments: [], pagination: { totalComments: 0, currentPage: 1, totalPages: 1 } };
     }
 };
@@ -34,24 +44,34 @@ export default function Comment({ topic }: CommentProps) {
 
     useEffect(() => {
         const loadComments = async () => {
+            if (!topic?.id) {
+                return;
+            }
             const data = await fetchComments(topic.id, page);
             setComments(data.comments);
             setTotalPages(data.pagination.totalPages);
         };
 
         loadComments();
-    }, [topic.id, page]);
+    }, [topic?.id, page]);
 
     const handleComment = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post(ENDPOINTS.POST_COMMENT, {
-                userId: process.env.REACT_APP_WALLET_ADDRESS,
-                topicId: topic.id,
-                comment: newComment,
-            });
+            const response = await axios.post(
+                ENDPOINTS.POST_COMMENT,
+                {
+                    topicId: topic?.id,
+                    comment: newComment,
+                },
+                {
+                    headers: {
+                        Authorization: localStorage.getItem("access_token"),
+                    },
+                }
+            );
             const createdComment = response.data.comment;
-            setComments([...comments, createdComment]);
+            setComments([createdComment, ...comments]);
             setNewComment("");
         } catch (error) {
             console.error("Error submitting comment:", error);
@@ -82,27 +102,29 @@ export default function Comment({ topic }: CommentProps) {
                     comments.map((comment) => (
                         <div key={comment.id} className="p-4 border border-gray-200 rounded">
                             <div className="flex justify-between text-sm text-gray-600 mb-2">
-                                <span className="font-medium">{comment.author}</span>
-                                <span>{comment.timestamp}</span>
+                                <div>
+                                    <span className="font-medium">{truncateAddress(comment.authorId)}</span>
+                                    <Link
+                                        to={`https://${process.env.REACT_APP_ENABLE_TESTNETS === "true" ? "sepolia." : ""}etherscan.io/address/${comment.authorId}`}
+                                        target="_blank"
+                                        className="inline-flex relative top-[3px]"
+                                    >
+                                        <ArrowUpRight className="h-[18px] text-blue-600" />
+                                    </Link>
+                                </div>
+                                <span>{new Date(comment.createdAt).toLocaleString()}</span>
                             </div>
                             <p className="leading-relaxed">{comment.content}</p>
                         </div>
                     ))
                 )}
             </div>
-            <div className="flex justify-center mt-6">
-                <button
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 mx-2 bg-gray-300 rounded-md"
-                >
+            <div className="flex justify-center items-center mt-6 gap-6">
+                <button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1} className="px-4 py-2 mx-2 bg-gray-300 rounded-md w-24">
                     Previous
                 </button>
-                <button
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={page === totalPages}
-                    className="px-4 py-2 mx-2 bg-gray-300 rounded-md"
-                >
+                {page}
+                <button onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))} disabled={page === totalPages} className="px-4 py-2 mx-2 bg-gray-300 rounded-md w-24">
                     Next
                 </button>
             </div>
