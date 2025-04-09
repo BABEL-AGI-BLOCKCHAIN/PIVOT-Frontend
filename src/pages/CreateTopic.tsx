@@ -15,6 +15,8 @@ import { useContractAddress } from "src/hooks/useContractAddress";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useChainId } from "src/hooks/useChainId";
+import axios from "axios";
+import { ENDPOINTS } from "src/config";
 
 export type FormData = {
     title: string;
@@ -85,6 +87,24 @@ export default function CreateTopic() {
         setTopicId("");
 
         try {
+            // const fd: any = new FormData();
+            // fd.append("topicId", "10");
+            // fd.append("topicTitle", formData.title);
+            // fd.append("topicContent", formData.content);
+            // fd.append("topicHash", "0x");
+            // fd.append("image", formData.resourceFile);
+
+            // await axios.post(ENDPOINTS.UPDATE_TOPIC, fd, {
+            //     headers: {
+            //         "Content-Type": "multipart/form-data",
+            //         Authorization: localStorage.getItem("access_token"),
+            //
+            //     },
+            // });
+
+            // setIsPending(false);
+
+            // return;
             const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
             await preProcessing();
 
@@ -118,9 +138,9 @@ export default function CreateTopic() {
                 functionName: "allowance",
                 args: [address, contractAddress],
             })) as bigint;
-            console.log({ result });
+            // console.log({ result });
 
-            console.log(investmentAmount, formatUnits(result, tokenDecimals));
+            // console.log(investmentAmount, formatUnits(result, tokenDecimals));
 
             const walletClient = await getWagmiWalletClient();
 
@@ -153,9 +173,23 @@ export default function CreateTopic() {
             const topic = keccak256(toBytes("CreateTopic(address,uint256,uint256,uint256,address,uint256)"));
             const log = res.logs.find((l) => l.topics[0] === topic);
             if (log?.data) {
-                let topicId = decodeAbiParameters(parseAbiParameters(["uint256"]), log.data as any)[0]?.toString();
+                let topicId = decodeAbiParameters(parseAbiParameters(["uint256"]), log!.data as any)[0]?.toString();
                 setTopicId(topicId);
                 console.log({ topicId });
+
+                const fd: any = new FormData();
+                fd.append("topicId", topicId);
+                fd.append("topicTitle", formData.title);
+                fd.append("topicContent", formData.content);
+                fd.append("topicHash", hashedMessage);
+                fd.append("image", formData.resourceFile);
+
+                await axios.post(ENDPOINTS.UPDATE_TOPIC, fd, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Authorization: localStorage.getItem("access_token"),
+                    },
+                });
             }
 
             //navigate('/');

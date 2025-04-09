@@ -17,6 +17,7 @@
         "@wagmi/core": "^2.16.3",
         "antd": "^5.23.4",
         "autoprefixer": "^10.4.20",
+        "axios": "^1.8.3",
         "bignumber.js": "^9.1.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -57,5 +58,13 @@
     "devDependencies": {
         "@ant-design/v5-patch-for-react-19": "^1.0.3",
         "@types/react-router-dom": "^5.3.3"
+    },
+    "overrides": {
+        "react-scripts": {
+            "typescript": "5.5.2"
+        },
+        "@wagmi/connectors": {
+            "typescript": "5.5.2"
+        }
     }
 }
