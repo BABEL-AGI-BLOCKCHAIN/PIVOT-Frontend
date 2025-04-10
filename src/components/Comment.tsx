@@ -5,6 +5,9 @@ import { ENDPOINTS } from "../config";
 import { truncateAddress } from "src/utils";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
+import { usePreProcessing } from "src/hooks/usePreProcessing";
+import { useAuthStore } from "src/store/authStore";
+import { useAccount } from "wagmi";
 
 export interface Comment {
     id: number;
@@ -38,9 +41,13 @@ const fetchComments = async (topicId: string, page = 1, limit = 10) => {
 
 export default function Comment({ topic }: CommentProps) {
     const [newComment, setNewComment] = useState("");
+    const [isPending, setIsPending] = useState(false);
     const [comments, setComments] = useState<Comment[]>([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const preProcessing = usePreProcessing();
+    const isSignIn = useAuthStore((state) => state.isSignIn);
+    const { status } = useAccount();
 
     useEffect(() => {
         const loadComments = async () => {
@@ -57,7 +64,9 @@ export default function Comment({ topic }: CommentProps) {
 
     const handleComment = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsPending(true);
         try {
+            await preProcessing();
             const response = await axios.post(
                 ENDPOINTS.POST_COMMENT,
                 {
@@ -76,6 +85,7 @@ export default function Comment({ topic }: CommentProps) {
         } catch (error) {
             console.error("Error submitting comment:", error);
         }
+        setIsPending(false);
     };
 
     return (
@@ -91,7 +101,7 @@ export default function Comment({ topic }: CommentProps) {
                 />
                 <div className="flex justify-end">
                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold text-sm">
-                        Submit Comment
+                        {status === "disconnected" ? "Connect Wallet" : !isSignIn ? "Sign In" : isPending ? "Submit Comment..." : "Submit Comment"}
                     </button>
                 </div>
             </form>

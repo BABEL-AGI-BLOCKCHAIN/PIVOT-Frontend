@@ -18,6 +18,7 @@ import { readContracts } from "@wagmi/core";
 import { config } from "src/wagmi";
 import { Topic } from "./Home";
 import { LoaderCircle } from "lucide-react";
+import Loading from "src/components/ui/loading";
 
 export interface TopicDetail extends Topic {
     id: string;
@@ -305,14 +306,7 @@ export default function TopicDetail() {
     }, [address]);
 
     if (!topic) {
-        return (
-            <div className="fixed inset-0 text-black size-full flex justify-center items-center">
-                <div className="flex flex-col justify-center items-center gap-2">
-                    <LoaderCircle className="text-[#0e76fd] size-16 animate-spin" />
-                    <div className="font-bold">Loading...</div>
-                </div>
-            </div>
-        );
+        return <Loading />;
     }
 
     return (

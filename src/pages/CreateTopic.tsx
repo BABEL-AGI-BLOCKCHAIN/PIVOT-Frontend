@@ -17,6 +17,8 @@ import { Link } from "react-router-dom";
 import { useChainId } from "src/hooks/useChainId";
 import axios from "axios";
 import { ENDPOINTS } from "src/config";
+import { useSignIn } from "src/hooks/useSignIn";
+import { useAuthStore } from "src/store/authStore";
 
 export type FormData = {
     title: string;
@@ -28,12 +30,13 @@ export type FormData = {
 };
 
 export default function CreateTopic() {
-    const { address } = useAccount();
+    const { address, status } = useAccount();
     const preProcessing = usePreProcessing();
 
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
     const [topicId, setTopicId] = useState("");
+    const isSignIn = useAuthStore((state) => state.isSignIn);
 
     const openNotificationWithIcon = (description: string) => {
         notification.error({
@@ -105,8 +108,9 @@ export default function CreateTopic() {
             // setIsPending(false);
 
             // return;
-            const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
             await preProcessing();
+
+            const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
 
             if (!isAddress(formData.tokenAddress)) {
                 console.log("Not a valid ERC20 token contract address");
@@ -283,7 +287,7 @@ export default function CreateTopic() {
                 </div>
 
                 <button type="submit" className="w-full p-3 bg-blue-600 text-white rounded-md text-md hover:bg-blue-700 font-bold" disabled={isPending}>
-                    {isPending ? "Creating Topic..." : "Create Topic"}
+                    {status === "disconnected" ? "Connect Wallet" : !isSignIn ? "Sign In" : isPending ? "Creating Topic..." : "Create Topic"}
                 </button>
 
                 <div className={cn("mt-4 break-words", !hash && "hidden")}>

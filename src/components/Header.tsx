@@ -1,69 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Link } from "react-router-dom";
 import Logo from "../assets/logo.png";
-import { useAccount, useSignMessage } from "wagmi";
-import axios from "axios";
-import { ENDPOINTS } from "src/config";
-
-// type EthereumRequest = {
-//     method: string;
-//     params?: any[];
-// };
+import { useAccount } from "wagmi";
+import { useAuthStore } from "src/store/authStore";
+import { useSignIn } from "src/hooks/useSignIn";
 
 export default function Header() {
-    // const [isConnected, setIsConnected] = useState(false);
-    // const [walletAddress, setWalletAddress] = useState("");
-
-    // const connectWallet = async (): Promise<void> => {
-    //     if (window.ethereum) {
-    //         try {
-    //             const accounts = await window.ethereum.request({
-    //                 method: "eth_requestAccounts",
-    //             } as EthereumRequest);
-    //             setWalletAddress(accounts[0]);
-    //             setIsConnected(true);
-    //         } catch (error) {
-    //             console.error("Error connecting wallet:", error);
-    //         }
-    //     } else {
-    //         alert("Please install MetaMask!");
-    //     }
-    // };
-    const { status, address } = useAccount();
-    const { signMessageAsync } = useSignMessage();
-
-    const handleSignIn = async () => {
-        try {
-            console.log(111);
-            const nonce = Math.floor(Math.random() * 1000000);
-
-            const message = `Welcome to the PIVOT platform!
-Please sign this message with your wallet to authenticate.
-
-Timestamp: ${Date.now()}
-Nonce: ${nonce}`;
-
-            const signature = await signMessageAsync({ message });
-
-            const response = await axios.post(ENDPOINTS.SIGN_IN, {
-                walletAddress: address,
-                signature,
-                message,
-            });
-
-            localStorage.setItem("access_token", response.data.accessToken);
-            console.log(response);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+    const { status } = useAccount();
+    const isSignIn = useAuthStore((state) => state.isSignIn);
+    const handleSignIn = useSignIn();
+    const setIsSignIn = useAuthStore((state) => state.setIsSignIn);
 
     useEffect(() => {
-        if (status === "connected" && !localStorage.getItem("access_token")) {
-            handleSignIn();
+        if (status === "connected" && !isSignIn) {
+            handleSignIn().catch((error) => {});
         } else if (status === "disconnected") {
             localStorage.removeItem("access_token");
+            setIsSignIn(false);
         }
     }, [status]);
 

@@ -18,6 +18,7 @@ import { ArrowUpRight, TrendingUp, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import Decimal from "decimal.js";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { useAuthStore } from "src/store/authStore";
 
 interface TradeProps {
     topic?: TopicDetail;
@@ -26,7 +27,7 @@ interface TradeProps {
 
 export default function Trade({ topic, getContractData }: TradeProps) {
     const { id } = useParams();
-    const { chainId, address } = useAccount();
+    const { chainId, address, status } = useAccount();
     const contractAddress = useContractAddress();
     const [investmentAmount, setInvestmentAmount] = useState("");
     const [activeTab, setActiveTab] = useState("invest");
@@ -36,6 +37,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
     const filteredPositions = filter === "all" ? topic?.myPositionsStats : topic?.myPositionsStats?.filter((position) => new BigNumber(position.withdrawableAmount).gt(0));
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
     const preProcessing = usePreProcessing();
+    const isSignIn = useAuthStore((state) => state.isSignIn);
 
     const openNotificationWithIcon = (description: string) => {
         notification.error({
@@ -67,7 +69,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
         setIsPending(true);
         setHash("");
         try {
-            await preProcessing();
+            await preProcessing(false);
 
             const tokenAddress = topic?.tokenAddress;
             const investmentAmountLocaleString = Number(investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
@@ -165,7 +167,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
             setIsWithdrawalPending(true);
             setWithdrawalHash("");
             try {
-                await preProcessing();
+                await preProcessing(false);
 
                 const tokenAddress = topic?.tokenAddress;
 
@@ -239,7 +241,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             disabled={!topic?.tokenAddress || isWithdrawalPending || new BigNumber(item.withdrawableAmount).isEqualTo(0)}
                             className="bg-green-600 hover:bg-green-700 text-white w-full font-bold"
                         >
-                            {isWithdrawalPending ? "Withdrawing..." : "Withdraw"}
+                            {status === "disconnected" ? "Connect Wallet" : isWithdrawalPending ? "Withdrawing..." : "Withdraw"}
                         </Button>
                     </form>
 
@@ -284,7 +286,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                             className="flex-1 border-gray-300"
                         />
                         <Button type="submit" disabled={!topic.tokenAddress || isPending} className="bg-green-600 hover:bg-green-700 text-white font-bold">
-                            {isPending ? "Investing..." : "Invest"}
+                            {status === "disconnected" ? "Connect Wallet" : isPending ? "Investing..." : "Invest"}
                         </Button>
                     </form>
                     {topic.tokenAddress !== zeroAddress && topic.minimumInvestmentAmount && (

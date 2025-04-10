@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { ENDPOINTS } from "../config";
 import TopicCard from "../components/TopicCard";
+import Loading from "src/components/ui/loading";
 
 export interface Topic {
     id: string;
@@ -58,6 +59,10 @@ export default function Home() {
 
         loadTopics();
     }, [page]);
+
+    if (topics.length === 0) {
+        return <Loading />;
+    }
 
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4">
