@@ -115,7 +115,7 @@ export default function TopicDetail() {
     const getMyPositions = async () => {
         try {
             const positions = (
-                await axios.get(ENDPOINTS.GET_POSITIONS(id), {
+                await axios.get(ENDPOINTS.GET_POSITIONS, {
                     params: {
                         id,
                         investor: address,
@@ -278,7 +278,7 @@ export default function TopicDetail() {
     useEffect(() => {
         const fetchTopic = async () => {
             try {
-                const response: any = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id));
+                const response: any = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id!));
                 console.log("response", response);
                 const topicData: any = response.data.topic;
                 const contractData = await getContractData(topicData, true);
