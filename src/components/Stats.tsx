@@ -14,6 +14,7 @@ export default function Stats({ topic }: StatsProps) {
         { title: "PIVOT CA", value: ca, isLink: true, isAddress: true },
         { title: "ERC-20 Token CA", value: topic?.tokenAddress, isLink: true, isAddress: true },
         { title: "Creator", value: topic?.creator, isLink: true, isAddress: true },
+        { title: "Twitter", value: topic?.createTopic.promoter.twitterHandle, isLink: true, isTwitter: true, icon: topic?.createTopic.promoter.avatar },
         { title: "Release Time", value: topic?.blockTimeStamp },
         { title: "Current Position", value: topic?.currentPosition },
         { title: "Total Investment", value: `${topic?.totalInvestment}${topic?.tokenSymbol ? "&nbsp;&nbsp;$" : ""}${topic?.tokenSymbol ?? ""}` },
@@ -23,15 +24,16 @@ export default function Stats({ topic }: StatsProps) {
             {statsList.map((item) => (
                 <div className="flex justify-between">
                     <span>{item.title}: </span>
-                    <span>
+                    <span className="flex gap-1">
+                        {item.icon && <img src={item.icon} className="rounded-full size-6" />}
                         <span dangerouslySetInnerHTML={{ __html: item.isAddress ? truncateAddress(item.value) : (item.value as string) }}></span>
                         {item.isLink && (
                             <Link
-                                to={`https://${process.env.REACT_APP_ENABLE_TESTNETS === "true" ? "sepolia." : ""}etherscan.io/address/${item.value}`}
+                                to={item.isTwitter ? `https://x.com/${item.value}` : `https://${process.env.REACT_APP_ENABLE_TESTNETS === "true" ? "sepolia." : ""}etherscan.io/address/${item.value}`}
                                 target="_blank"
                                 className="inline-flex relative top-[3px]"
                             >
-                                <ArrowUpRight className="h-[18px] text-blue-600" />
+                                <ArrowUpRight className="size-[18px] text-blue-600" />
                             </Link>
                         )}
                     </span>

@@ -12,6 +12,10 @@ export interface Topic {
         investment: string;
         promoterId: string;
         tokenAddress: string;
+        promoter: {
+            avatar?: string;
+            twitterHandle?: string;
+        };
     };
     metadata: {
         mediaCID: string;
@@ -49,18 +53,28 @@ export default function Home() {
     const [topics, setTopics] = useState<Topic[]>([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [isPending, setIsPending] = useState(false);
 
     useEffect(() => {
         const loadTopics = async () => {
-            const data = await fetchTopics(page);
-            setTopics(data.topics);
-            setTotalPages(data.pagination.totalPages);
+            if (isPending) {
+                return;
+            }
+
+            setIsPending(true);
+            try {
+                const data = await fetchTopics(page);
+                setTopics(data.topics);
+                setTotalPages(data.pagination.totalPages);
+            } catch (error) {}
+
+            setIsPending(false);
         };
 
         loadTopics();
     }, [page]);
 
-    if (topics.length === 0) {
+    if (isPending) {
         return <Loading />;
     }
 

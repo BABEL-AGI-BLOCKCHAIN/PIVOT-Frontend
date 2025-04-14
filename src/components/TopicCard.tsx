@@ -89,6 +89,13 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
                         <span className="font-medium">Creator:</span>
                         <span>{truncateAddress(createTopic.promoterId)}</span>
                     </div>
+                    <div className="flex justify-between">
+                        <span className="font-medium">Twitter:</span>
+                        <div className="flex items-center gap-1">
+                            {createTopic.promoter.avatar && <img src={createTopic.promoter.avatar} className="rounded-full size-6" />}
+                            <span>{createTopic.promoter.twitterHandle}</span>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
                     <Link to={`/topic/${id}`} className="text-blue-600 hover:underline">
