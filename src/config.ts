@@ -11,5 +11,6 @@ export const ENDPOINTS = {
     POST_COMMENT: `${API_BASE_URL}/topic/comment`,
     GET_TOPIC_BY_ID: (topicId: string) => `${API_BASE_URL}/topic/getTopic/${topicId}`,
     GET_POSITIONS: `${API_BASE_URL}/invest/getPositions`,
-    BIND_TWITTER: (walletAddress: Address) => `${API_BASE_URL}/auth/twitter?walletAddress=${walletAddress}`,
+    BIND_TWITTER: (accessToken: string) => `${API_BASE_URL}/auth/twitter?accessToken=${accessToken}`,
+    GET_USER: (walletAddress: Address) => `${API_BASE_URL}/user/getUser/${walletAddress}`,
 };

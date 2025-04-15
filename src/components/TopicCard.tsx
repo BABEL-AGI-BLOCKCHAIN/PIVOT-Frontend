@@ -35,7 +35,6 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
             },
         ],
     });
-    console.log(res.data);
 
     // useEffect(() => {
     //     const loadComments = async () => {
