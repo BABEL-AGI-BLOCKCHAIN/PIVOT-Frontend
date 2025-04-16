@@ -25,12 +25,12 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
         contracts: [
             {
                 abi: ERC20ABI as any[],
-                address: createTopic.tokenAddress as Address,
+                address: createTopic?.tokenAddress as Address,
                 functionName: "symbol",
             },
             {
                 abi: ERC20ABI,
-                address: createTopic.tokenAddress as Address,
+                address: createTopic?.tokenAddress as Address,
                 functionName: "decimals",
             },
         ],
@@ -71,7 +71,8 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
                     <div className="flex justify-between">
                         <span className="font-medium">Minimum Investment Amount:</span>
                         <span>
-                            {formatUnits(BigInt(createTopic.investment), (res.data?.[1]?.result as number) ?? 18)} {(res.data?.[0]?.result && "$" + (res.data?.[0]?.result as unknown as string)) ?? ""}
+                            {createTopic?.investment && formatUnits(BigInt(createTopic?.investment), (res.data?.[1]?.result as number) ?? 18)}{" "}
+                            {(res.data?.[0]?.result && "$" + (res.data?.[0]?.result as unknown as string)) ?? ""}
                         </span>
                     </div>
                     <div className="flex justify-between">
@@ -82,17 +83,17 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
                     </div>{" "}
                     <div className="flex justify-between">
                         <span className="font-medium">Token Address:</span>
-                        <span>{truncateAddress(createTopic.tokenAddress)}</span>
+                        <span>{truncateAddress(createTopic?.tokenAddress)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="font-medium">Creator:</span>
-                        <span>{truncateAddress(createTopic.promoterId)}</span>
+                        <span>{truncateAddress(createTopic?.promoterId)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="font-medium">Twitter:</span>
                         <div className="flex items-center gap-1">
-                            {createTopic.promoter.avatar && <img src={createTopic.promoter.avatar} className="rounded-full size-6" />}
-                            <span>{createTopic.promoter.twitterHandle}</span>
+                            {createTopic?.promoter?.avatar && <img src={createTopic.promoter.avatar} className="rounded-full size-6" />}
+                            <span>{createTopic?.promoter?.twitterHandle}</span>
                         </div>
                     </div>
                 </div>

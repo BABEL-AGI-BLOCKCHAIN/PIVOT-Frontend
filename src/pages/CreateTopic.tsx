@@ -90,8 +90,10 @@ export default function CreateTopic() {
         setTopicId("");
 
         try {
+            await preProcessing();
+
             // const fd: any = new FormData();
-            // fd.append("topicId", "10");
+            // fd.append("topicId", "13");
             // fd.append("topicTitle", formData.title);
             // fd.append("topicContent", formData.content);
             // fd.append("topicHash", "0x");
@@ -101,14 +103,12 @@ export default function CreateTopic() {
             //     headers: {
             //         "Content-Type": "multipart/form-data",
             //         Authorization: localStorage.getItem("access_token"),
-            //
             //     },
             // });
 
             // setIsPending(false);
 
             // return;
-            await preProcessing();
 
             const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
 
