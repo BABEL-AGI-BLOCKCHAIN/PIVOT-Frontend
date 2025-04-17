@@ -299,7 +299,7 @@ export default function CreateTopic() {
                         </Link>
                     </div>
                 </div>
-                <div className={cn("mt-4 break-words", !topicId && "hidden")}>
+                <div className={cn("mt-4 break-words", (!topicId || isPending) && "hidden")}>
                     <div className="text-md text-gray-600">
                         <Link to={`/topic/${topicId}`} className="inline-flex relative top-[3px] w-full">
                             <button type="submit" className="w-full p-3 bg-blue-600 text-white rounded-md text-md hover:bg-blue-700 font-bold" disabled={isPending}>

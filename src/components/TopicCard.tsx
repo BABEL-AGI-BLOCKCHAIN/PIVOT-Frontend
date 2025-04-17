@@ -62,7 +62,7 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
             )}
             <div className="p-4">
                 <h2 className="text-lg font-semibold mb-2">{metadata?.topicTitle}</h2>
-                <p className="text-gray-600 mb-4">{metadata?.topicContent}</p>
+                <p className="text-gray-600 mb-4 line-clamp-3">{metadata?.topicContent}</p>
                 <div className="text-sm text-gray-700 space-y-2">
                     <div className="flex justify-between">
                         <span className="font-medium">Current Position:</span>
@@ -89,13 +89,15 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
                         <span className="font-medium">Creator:</span>
                         <span>{truncateAddress(createTopic?.promoterId)}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="font-medium">Twitter:</span>
-                        <div className="flex items-center gap-1">
-                            {createTopic?.promoter?.avatar && <img src={createTopic.promoter.avatar} className="rounded-full size-6" />}
-                            <span>{createTopic?.promoter?.twitterHandle}</span>
+                    {createTopic?.promoter?.twitterHandle && (
+                        <div className="flex justify-between">
+                            <span className="font-medium">Twitter:</span>
+                            <div className="flex items-center gap-1">
+                                {createTopic?.promoter?.avatar && <img src={createTopic.promoter.avatar} className="rounded-full size-6" />}
+                                <span>{createTopic?.promoter?.twitterHandle}</span>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
                 <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
                     <Link to={`/topic/${id}`} className="text-blue-600 hover:underline">
