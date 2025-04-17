@@ -62,7 +62,7 @@ export default function TopicCard({ id, createTopic, metadata, totalInvestment, 
             )}
             <div className="p-4">
                 <h2 className="text-lg font-semibold mb-2">{metadata?.topicTitle}</h2>
-                <p className="text-gray-600 mb-4">{metadata?.topicContent}</p>
+                <p className="text-gray-600 mb-4 line-clamp-3">{metadata?.topicContent}</p>
                 <div className="text-sm text-gray-700 space-y-2">
                     <div className="flex justify-between">
                         <span className="font-medium">Current Position:</span>
