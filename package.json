@@ -17,6 +17,7 @@
         "@wagmi/core": "^2.16.3",
         "antd": "^5.23.4",
         "autoprefixer": "^10.4.20",
+        "axios": "^1.8.3",
         "bignumber.js": "^9.1.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -26,6 +27,7 @@
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-dropzone": "^14.3.8",
+        "react-masonry-css": "^1.0.16",
         "react-router-dom": "^7.1.5",
         "react-scripts": "^5.0.1",
         "tailwind-merge": "^3.0.2",
@@ -33,7 +35,8 @@
         "typescript": "5.5.2",
         "util": "0.12.5",
         "viem": "2.21.55",
-        "wagmi": "^2.14.7"
+        "wagmi": "^2.14.7",
+        "zustand": "^5.0.3"
     },
     "scripts": {
         "dev": "GENERATE_SOURCEMAP=false react-scripts start",
@@ -57,5 +60,13 @@
     "devDependencies": {
         "@ant-design/v5-patch-for-react-19": "^1.0.3",
         "@types/react-router-dom": "^5.3.3"
+    },
+    "overrides": {
+        "react-scripts": {
+            "typescript": "5.5.2"
+        },
+        "@wagmi/connectors": {
+            "typescript": "5.5.2"
+        }
     }
 }

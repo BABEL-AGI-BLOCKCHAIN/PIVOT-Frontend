@@ -1,38 +1,42 @@
-import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { usePreProcessing } from "src/hooks/usePreProcessing";
-import { readContract } from "viem/actions";
-import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
-import { getWagmiPublicClient } from "src/utils";
-import { Address, formatUnits } from "viem";
-import { useAccount } from "wagmi";
-import ERC20ABI from "../contracts/TopicERC20_ABI.json";
-import { useContractAddress } from "src/hooks/useContractAddress";
-import Trade from "src/components/Trade";
 import CommentComponent, { Comment } from "src/components/Comment";
 import Stats from "src/components/Stats";
+import Trade from "src/components/Trade";
+import { ENDPOINTS } from "src/config";
 import { useChainId } from "src/hooks/useChainId";
+import { useContractAddress } from "src/hooks/useContractAddress";
+import { usePreProcessing } from "src/hooks/usePreProcessing";
+import { getWagmiPublicClient } from "src/utils";
+import { Address, formatUnits, zeroAddress } from "viem";
+import { readContract } from "viem/actions";
+import { useAccount } from "wagmi";
+import PivotTopicABI from "../contracts/PivotTopic_ABI.json";
+import ERC20ABI from "../contracts/TopicERC20_ABI.json";
+import { readContracts } from "@wagmi/core";
+import { config } from "src/wagmi";
+import { Topic } from "./Home";
+import { LoaderCircle } from "lucide-react";
+import Loading from "src/components/ui/loading";
 
-export interface TopicDetail {
+export interface TopicDetail extends Topic {
     id: string;
-    title: string;
-    content: string;
-    author: string;
-    image: string;
-    totalInvestment: number;
     minimumInvestmentAmount: string;
-    currentPosition: number;
+    withdrawalFee: string;
     myInvestment: string;
-    myIncome: string;
-    commentsCount: number;
-    publishTime: string;
-    tokenName: string;
-    tokenLogo: string;
+    myWithdrawableAmount: string;
+    myTotalIncome: string;
+    myPositionsStats: {
+        withdrawableAmount: string;
+        totalIncome: string;
+        position: number;
+        investmentDate: string;
+    }[];
+    myTokenBalance: string;
     tokenAddress: Address;
     tokenSymbol: string;
     tokenDecimals: number;
-    myTokenBalance: string;
-    comments: Comment[];
 }
 
 export default function TopicDetail() {
@@ -68,7 +72,7 @@ export default function TopicDetail() {
     };
 
     const getMyTokenBalance = async (tokenAddress: Address) => {
-        if (!address) {
+        if (!address || tokenAddress === zeroAddress) {
             return;
         }
         const result = (await readContract(publicClient, {
@@ -80,40 +84,122 @@ export default function TopicDetail() {
         return result;
     };
 
-    const getMyIncome = async (address: Address, topicId: string) => {
+    const getMyPositionWithdrawnAmount = async (position: number) => {
         if (!address) {
             return;
         }
         const result = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
-            functionName: "getIncome",
-            args: [address, topicId],
+            functionName: "_positionReceivedIncome",
+            args: [address, id!, position],
         })) as bigint;
+        // console.log({ result });
         return result;
     };
 
+    const getMyWithdrawnAmount = async () => {
+        if (!address) {
+            return;
+        }
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_receivedIncome",
+            args: [address, id!],
+        })) as bigint;
+        // console.log({ result });
+        return result;
+    };
+
+    const getMyPositions = async () => {
+        try {
+            const positions = (
+                await axios.get(ENDPOINTS.GET_POSITIONS, {
+                    params: {
+                        id,
+                        investor: address,
+                    },
+                })
+            ).data.positions;
+
+            return positions;
+        } catch (error) {
+            console.error("Error fetching positions:", error);
+        }
+    };
+
+    const getMyPositionsStats = async (positions: { position: number; blockTimeStamp: string }[], fixedInvestment: bigint, currentPosition: bigint, withdrawalFee: bigint) => {
+        const res = await Promise.allSettled(
+            positions.map(async (item) => {
+                const positionTotalIncome = getMyPositionIncome(fixedInvestment, item.position, currentPosition);
+                const withdrawnAmount = await getMyPositionWithdrawnAmount(item.position);
+                const withdrawFee = positionTotalIncome > fixedInvestment ? ((positionTotalIncome - fixedInvestment) * BigInt(withdrawalFee)) / BigInt(1000) : BigInt(0);
+                return {
+                    position: item.position,
+                    investmentDate: item.blockTimeStamp,
+                    totalIncome: positionTotalIncome - withdrawFee,
+                    withdrawableAmount: positionTotalIncome - withdrawnAmount! - withdrawFee,
+                };
+            })
+        );
+
+        return res.filter((item) => item.status === "fulfilled").map((item) => item.value);
+    };
+
+    const getMyTotalIncome = (myPositions: number[], fixedInvestment: bigint, currentPosition: bigint) => {
+        const totalIncome = myPositions.reduce((acc, item) => {
+            return acc + getMyPositionIncome(fixedInvestment, item, currentPosition);
+        }, BigInt(0));
+
+        return totalIncome;
+    };
+
+    const getMyPositionIncome = (fixedInvestment: bigint, position: number, currentPosition: bigint) => {
+        let sum = BigInt(0);
+        let _fixedInvestment = fixedInvestment;
+        let _position = Number(position);
+        let _currentPosition = Number(currentPosition);
+
+        for (let i = _position; i <= _currentPosition; i++) {
+            sum = sum += _fixedInvestment / BigInt(i);
+        }
+
+        return sum;
+    };
+
     const getTokenInfo = async () => {
-        console.log({ contractAddress });
         const tokenAddress = (await readContract(publicClient, {
             abi: PivotTopicABI,
             address: contractAddress,
             functionName: "topicCoin",
             args: [id],
         })) as Address;
+        if (tokenAddress === zeroAddress) {
+            return { tokenAddress, tokenSymbol: "", tokenDecimals: 18 };
+        }
+        // const tokenSymbol = (await readContract(publicClient, {
+        //     abi: ERC20ABI,
+        //     address: tokenAddress,
+        //     functionName: "symbol",
+        // })) as string;
 
-        const tokenSymbol = (await readContract(publicClient, {
-            abi: ERC20ABI,
-            address: tokenAddress,
-            functionName: "symbol",
-        })) as string;
+        const res = await readContracts(config, {
+            contracts: [
+                {
+                    abi: ERC20ABI as any[],
+                    address: tokenAddress,
+                    functionName: "symbol",
+                },
+                {
+                    abi: ERC20ABI,
+                    address: tokenAddress,
+                    functionName: "decimals",
+                },
+            ],
+        });
 
-        const tokenDecimals = (await readContract(publicClient, {
-            abi: ERC20ABI,
-            address: tokenAddress,
-            functionName: "decimals",
-        })) as number;
-        return { tokenAddress, tokenSymbol, tokenDecimals };
+        return { tokenAddress, tokenSymbol: (res[0].result as string) ?? "", tokenDecimals: (res[1].result as number) ?? 18 };
     };
 
     const getMinimumInvestmentAmount = async () => {
@@ -126,50 +212,90 @@ export default function TopicDetail() {
         return result;
     };
 
-    const getContractData = async (topic: TopicDetail, isInitial?: boolean) => {
-        const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic.tokenAddress, tokenSymbol: topic.tokenSymbol, tokenDecimals: topic.tokenDecimals };
-        const minimumInvestmentAmount = isInitial && (await getMinimumInvestmentAmount());
-        const myTokenBalance = await getMyTokenBalance(topic.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
-        const myInvestment = await getMyInvestment();
-        const myIncome = await getMyIncome(address as Address, id!);
+    const getCurrentPosition = async () => {
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_position",
+            args: [id],
+        })) as bigint;
+        return result;
+    };
 
-        setTopic({
+    const getWithdrawalFee = async () => {
+        const result = (await readContract(publicClient, {
+            abi: PivotTopicABI,
+            address: contractAddress,
+            functionName: "_commissionrate",
+            args: [],
+        })) as bigint;
+        return result;
+    };
+
+    const getContractData = async (topic?: TopicDetail, isInitial?: boolean) => {
+        const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic?.tokenAddress, tokenSymbol: topic?.tokenSymbol, tokenDecimals: topic?.tokenDecimals };
+        const minimumInvestmentAmount = await getMinimumInvestmentAmount();
+        const currentPosition = await getCurrentPosition();
+        const withdrawalFee = await getWithdrawalFee();
+        const myTokenBalance = await getMyTokenBalance(topic?.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
+        const myInvestment = await getMyInvestment();
+        // const myWithdrawnAmount = await getMyWithdrawnAmount();
+        const myPositions = await getMyPositions();
+        const myPositionsStats = await getMyPositionsStats(myPositions, minimumInvestmentAmount, currentPosition, withdrawalFee);
+        // const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
+        const contractData = {
             ...topic,
             ...(isInitial && tokenInfo),
-            ...(isInitial && { minimumInvestmentAmount: formatUnits((minimumInvestmentAmount as bigint) ?? BigInt(0), tokenInfo.tokenDecimals) }),
-            myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo.tokenDecimals),
-            myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo.tokenDecimals),
-            myIncome: formatUnits(myIncome ?? BigInt(0), tokenInfo.tokenDecimals),
-        });
+            withdrawalFee: `${Number(withdrawalFee) / 10}%`,
+            minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
+            currentPosition: Number(currentPosition),
+            myTokenBalance: formatUnits(myTokenBalance ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
+            myInvestment: formatUnits(myInvestment ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
+            // myWithdrawableAmount: formatUnits(myTotalIncome - (myWithdrawnAmount ?? BigInt(0)), tokenInfo.tokenDecimals),
+            myPositionsStats: myPositionsStats.map((item) => ({
+                ...item,
+                withdrawableAmount: formatUnits(item.withdrawableAmount, tokenInfo?.tokenDecimals ?? 18),
+                totalIncome: formatUnits(item.totalIncome, tokenInfo?.tokenDecimals ?? 18),
+            })),
+            myWithdrawableAmount: formatUnits(
+                myPositionsStats.reduce((acc, item) => {
+                    return acc + item.withdrawableAmount;
+                }, BigInt(0)),
+                tokenInfo?.tokenDecimals ?? 18
+            ),
+            myTotalIncome: formatUnits(
+                myPositionsStats.reduce((acc, item) => {
+                    return acc + item.totalIncome;
+                }, BigInt(0)),
+                tokenInfo?.tokenDecimals ?? 18
+            ),
+        };
+
+        setTopic(contractData as TopicDetail);
+        return contractData;
     };
 
     useEffect(() => {
-        // Mock data - replace with actual API call
-        const mockTopic = {
-            id: "1",
-            title: "Emerging DeFi Project Investment",
-            content: "This is a promising DeFi project with an innovative tokenomics model...",
-            author: "0x1234...5678",
-            image: "https://pbs.twimg.com/media/GgOZFNqXQAA5RGQ?format=jpg&name=small",
-            totalInvestment: 1000000,
-            investmentAmount: 1000,
-            currentPosition: 500,
-            commentsCount: 42,
-            publishTime: "2024-01-13 10:00",
-            tokenName: "USDT",
-            tokenLogo: "https://placeholder.com/token-logo.png",
-            comments: [
-                {
-                    id: "1",
-                    author: "0xabcd...efgh",
-                    content: "Great investment opportunity!",
-                    timestamp: "2024-01-13 11:00",
-                },
-            ].flatMap((item) => Array(9).fill(item)),
+        const fetchTopic = async () => {
+            try {
+                const response: any = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id!));
+                console.log("response", response);
+                const topicData: any = response.data.topic;
+                const contractData = await getContractData(topicData, true);
+                console.log({ contractData });
+                setTopic({
+                    ...contractData,
+                    ...topicData,
+                    creator: topicData.createTopic.promoterId,
+                    blockTimeStamp: new Date(topicData.blockTimeStamp).toLocaleString(),
+                    totalInvestment: formatUnits(topicData.totalInvestment, contractData?.tokenDecimals ?? 18),
+                });
+            } catch (error) {
+                console.error("Error fetching topic:", error);
+            }
         };
-        const newTopic = { ...(topic as TopicDetail), ...mockTopic };
-        setTopic(newTopic);
-        getContractData(newTopic, true);
+
+        fetchTopic();
     }, [id]);
 
     useEffect(() => {
@@ -180,30 +306,26 @@ export default function TopicDetail() {
     }, [address]);
 
     if (!topic) {
-        return <div className="loading">Loading...</div>;
+        return <Loading />;
     }
 
     return (
         <div className="pt-20 max-w-6xl mx-auto px-4 pb-8">
-            <div className="mb-8">
-                {/* <h1 className="text-2xl font-bold mb-4">{topic.title}</h1> */}
-                {/* <div className="flex gap-4 text-gray-600 text-sm">
-                    <span className="font-medium">Author: {topic.author}</span>
-                    <span>Published: {topic.publishTime}</span>
-                    <span>Total Investment: {topic.totalInvestment}</span>
-                    <span>Current Position: {topic.currentPosition}</span>
-                </div> */}
-            </div>
             <div className="flex gap-6 ">
                 <div className="flex-1">
                     <div>
                         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                            <h1 className="text-2xl font-bold mb-4">{topic.title}</h1>
+                            <h1 className="text-2xl font-bold mb-4">{topic?.metadata?.topicTitle}</h1>
                             <div className="mb-8 leading-relaxed">
-                                <p>{topic.content}</p>
+                                <p>{topic?.metadata?.topicContent}</p>
                             </div>
                             <div className="mb-8">
-                                <img src={topic.image} alt={topic.title} className="max-h-64 object-cover rounded-lg" />
+                                {/* <img src={topic.image} className="max-h-64 object-cover rounded-lg" /> */}
+                                {topic?.metadata?.mediaCID && (
+                                    <div className="w-full h-52 overflow-hidden">
+                                        <img src={topic.metadata?.mediaCID ? `${process.env.REACT_APP_IPFS_GATEWAY}${topic.metadata.mediaCID}` : ""} className="w-full h-full object-cover" />
+                                    </div>
+                                )}
                             </div>
                             <CommentComponent topic={topic} />
                         </div>

@@ -1,4 +1,4 @@
 import { Address } from "viem";
 import { sepolia } from "viem/chains";
 
-export const pivotTopicContractAddress = { [sepolia.id as number]: { address: "0x891F9488fDAb011Bc0B330E02b512d47Ce6D71A7" as Address, env: ["dev"] } };
+export const pivotTopicContractAddress = { [sepolia.id as number]: { address: "0x5a03f77edf64f184F177e98EC1a04303b2192Bf1" as Address, env: ["dev"] } };
