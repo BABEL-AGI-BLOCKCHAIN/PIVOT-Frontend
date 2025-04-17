@@ -18,7 +18,8 @@ export default function Stats({ topic }: StatsProps) {
         { title: "Release Time", value: topic?.blockTimeStamp },
         { title: "Current Position", value: topic?.currentPosition },
         { title: "Total Investment", value: `${topic?.totalInvestment}${topic?.tokenSymbol ? "&nbsp;&nbsp;$" : ""}${topic?.tokenSymbol ?? ""}` },
-    ];
+    ].filter((item) => item.value);
+    
     return (
         <div className="flex flex-col gap-4 bg-white p-6 rounded-lg shadow-md border border-gray-100">
             {statsList.map((item) => (
