@@ -90,7 +90,6 @@ export default function CreateTopic() {
         setTopicId("");
 
         try {
-            const investmentAmount = Number(formData.investmentAmount).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
             await preProcessing();
 
             // const fd: any = new FormData();
