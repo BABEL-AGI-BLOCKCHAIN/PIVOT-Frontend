@@ -22,10 +22,10 @@ import { useAuthStore } from "src/store/authStore";
 
 interface TradeProps {
     topic?: TopicDetail;
-    getContractData: (topic?: TopicDetail, isInitial?: boolean) => Promise<any>;
+    fetchTopic: (isInitial?: boolean) => Promise<any>;
 }
 
-export default function Trade({ topic, getContractData }: TradeProps) {
+export default function Trade({ topic, fetchTopic }: TradeProps) {
     const { id } = useParams();
     const { chainId, address, status } = useAccount();
     const contractAddress = useContractAddress();
@@ -34,7 +34,31 @@ export default function Trade({ topic, getContractData }: TradeProps) {
     const [isPending, setIsPending] = useState(false);
     const [hash, setHash] = useState("");
     const [filter, setFilter] = useState<"all" | "withdrawable">("all");
-    const filteredPositions = filter === "all" ? topic?.myPositionsStats : topic?.myPositionsStats?.filter((position) => new BigNumber(position.withdrawableAmount).gt(0));
+    const filteredPositions =
+        filter === "all"
+            ? topic?.myPositionsStats.sort((a, b) => {
+                  const dateA = new Date(a.investmentDate).getTime();
+                  const dateB = new Date(b.investmentDate).getTime();
+
+                  if (dateA === dateB) {
+                      return b.position - a.position;
+                  }
+
+                  return dateB - dateA;
+              })
+            : topic?.myPositionsStats
+                  ?.filter((position) => new BigNumber(position.withdrawableAmount).gt(0))
+                  .sort((a, b) => {
+                      const dateA = new Date(a.investmentDate).getTime();
+                      const dateB = new Date(b.investmentDate).getTime();
+
+                      if (dateA === dateB) {
+                          return b.position - a.position;
+                      }
+
+                      return dateB - dateA;
+                  });
+
     const publicClient = useMemo(() => getWagmiPublicClient(chainId), [chainId]);
     const preProcessing = usePreProcessing();
     const isSignIn = useAuthStore((state) => state.isSignIn);
@@ -131,7 +155,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                 description: "Successfully invested",
                 duration: 3,
             });
-            getContractData(topic);
+            fetchTopic();
         } catch (error: any) {
             console.log(error);
             const err = error?.cause?.shortMessage || error?.message || error;
@@ -194,7 +218,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                     description: "Successfully withdrawn",
                     duration: 3,
                 });
-                getContractData(topic);
+                fetchTopic();
             } catch (error: any) {
                 console.log(error);
                 const err = error?.cause?.shortMessage || error?.message || error;
@@ -295,6 +319,7 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                                 .fill(1)
                                 .map((item, index) => (
                                     <div
+                                        key={index}
                                         className="border border-gray-200 shadow-md px-4 py-2 cursor-pointer rounded-lg"
                                         onClick={() => {
                                             setInvestmentAmount(new Decimal(formatDecimal(topic.minimumInvestmentAmount)).times(index + 1).toString());
@@ -409,8 +434,8 @@ export default function Trade({ topic, getContractData }: TradeProps) {
                         </div>
                     )}
                     <div className={`grid gap-6 grid-cols-1 max-h-[50.5vh] ${filteredPositions && filteredPositions?.length > 0 && "overflow-auto"} px-6 pb-6`}>
-                        {filteredPositions?.map((item) => (
-                            <PositionItem item={item} />
+                        {filteredPositions?.map((item, index) => (
+                            <PositionItem item={item} key={index} />
                         ))}
                     </div>
                 </TabsContent>

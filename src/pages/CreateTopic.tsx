@@ -93,7 +93,7 @@ export default function CreateTopic() {
             await preProcessing();
 
             // const fd: any = new FormData();
-            // fd.append("topicId", "13");
+            // fd.append("topicId", "2");
             // fd.append("topicTitle", formData.title);
             // fd.append("topicContent", formData.content);
             // fd.append("topicHash", "0x");

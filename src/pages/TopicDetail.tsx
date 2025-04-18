@@ -232,12 +232,12 @@ export default function TopicDetail() {
         return result;
     };
 
-    const getContractData = async (topic?: TopicDetail, isInitial?: boolean) => {
-        const tokenInfo = isInitial ? await getTokenInfo() : { tokenAddress: topic?.tokenAddress, tokenSymbol: topic?.tokenSymbol, tokenDecimals: topic?.tokenDecimals };
+    const getContractData = async (topic?: TopicDetail) => {
+        const tokenInfo = await getTokenInfo();
         const minimumInvestmentAmount = await getMinimumInvestmentAmount();
         const currentPosition = await getCurrentPosition();
         const withdrawalFee = await getWithdrawalFee();
-        const myTokenBalance = await getMyTokenBalance(topic?.tokenAddress ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
+        const myTokenBalance = await getMyTokenBalance((topic?.createTopic?.tokenAddress as Address) ?? (tokenInfo as { tokenAddress: Address }).tokenAddress);
         const myInvestment = await getMyInvestment();
         // const myWithdrawnAmount = await getMyWithdrawnAmount();
         const myPositions = await getMyPositions();
@@ -245,7 +245,7 @@ export default function TopicDetail() {
         // const myTotalIncome = getMyTotalIncome(myPositions, minimumInvestmentAmount, currentPosition);
         const contractData = {
             ...topic,
-            ...(isInitial && tokenInfo),
+            ...tokenInfo,
             withdrawalFee: `${Number(withdrawalFee) / 10}%`,
             minimumInvestmentAmount: formatUnits(minimumInvestmentAmount ?? BigInt(0), tokenInfo?.tokenDecimals ?? 18),
             currentPosition: Number(currentPosition),
@@ -275,26 +275,26 @@ export default function TopicDetail() {
         return contractData;
     };
 
-    useEffect(() => {
-        const fetchTopic = async () => {
-            try {
-                const response: any = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id!));
-                console.log("response", response);
-                const topicData: any = response.data.topic;
-                const contractData = await getContractData(topicData, true);
-                console.log({ contractData });
-                setTopic({
-                    ...contractData,
-                    ...topicData,
-                    creator: topicData.createTopic.promoterId,
-                    blockTimeStamp: new Date(topicData.blockTimeStamp).toLocaleString(),
-                    totalInvestment: formatUnits(topicData.totalInvestment, contractData?.tokenDecimals ?? 18),
-                });
-            } catch (error) {
-                console.error("Error fetching topic:", error);
-            }
-        };
+    const fetchTopic = async () => {
+        try {
+            const response: any = await axios.get(ENDPOINTS.GET_TOPIC_BY_ID(id!));
+            console.log("response", response);
+            const topicData: any = response.data.topic;
+            const contractData = await getContractData(topicData);
+            console.log({ contractData });
+            setTopic({
+                ...contractData,
+                ...topicData,
+                creator: topicData.createTopic.promoterId,
+                blockTimeStamp: new Date(topicData.blockTimeStamp).toLocaleString(),
+                totalInvestment: formatUnits(topicData.totalInvestment, contractData?.tokenDecimals ?? 18),
+            });
+        } catch (error) {
+            console.error("Error fetching topic:", error);
+        }
+    };
 
+    useEffect(() => {
         fetchTopic();
     }, [id]);
 
@@ -302,7 +302,7 @@ export default function TopicDetail() {
         if (!topic) {
             return;
         }
-        getContractData(topic, true);
+        getContractData(topic);
     }, [address]);
 
     if (!topic) {
@@ -333,7 +333,7 @@ export default function TopicDetail() {
                 </div>
                 <div className="w-[400px]">
                     <div>
-                        <Trade topic={topic} getContractData={getContractData} />
+                        <Trade topic={topic} fetchTopic={fetchTopic} />
                     </div>
                     <div className="pt-6">
                         <Stats topic={topic} />

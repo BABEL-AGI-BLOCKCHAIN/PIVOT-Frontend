@@ -19,11 +19,11 @@ export default function Stats({ topic }: StatsProps) {
         { title: "Current Position", value: topic?.currentPosition },
         { title: "Total Investment", value: `${topic?.totalInvestment}${topic?.tokenSymbol ? "&nbsp;&nbsp;$" : ""}${topic?.tokenSymbol ?? ""}` },
     ].filter((item) => item.value);
-    
+
     return (
         <div className="flex flex-col gap-4 bg-white p-6 rounded-lg shadow-md border border-gray-100">
-            {statsList.map((item) => (
-                <div className="flex justify-between">
+            {statsList.map((item, index) => (
+                <div key={index} className="flex justify-between">
                     <span>{item.title}: </span>
                     <span className="flex gap-1">
                         {item.icon && <img src={item.icon} className="rounded-full size-6" />}
